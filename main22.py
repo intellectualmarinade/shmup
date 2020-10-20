@@ -1,4 +1,5 @@
 import arcade
+import time
 import os
 
 SPRITE_SCALING = 0.5
@@ -13,43 +14,28 @@ BULLET_SPEED = 15
 window = None
 
 
-class MenuView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.WHITE)
+class Player(arcade.Sprite):
 
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Menu Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
+    def update(self):
+        self.center_x += self.change_x
+        self.center_y += self.change_y
 
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        instructions_view = InstructionView()
-        self.window.show_view(instructions_view)
+        if self.left < 0:
+            self.left = 0
+        elif self.right > SCREEN_WIDTH - 1:
+            self.right = SCREEN_WIDTH - 1
 
-
-class InstructionView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.ORANGE_PEEL)
-
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        self.window.show_view(game_view)
+        if self.bottom < 0:
+            self.bottom = 0
+        elif self.top > SCREEN_HEIGHT - 1:
+            self.top = SCREEN_HEIGHT - 1
 
 
-class GameView(arcade.View):
+class MyGame(arcade.Window):
 
-    def __init__(self):
+    def __init__(self, width, height, title):
 
-        super().__init__()
+        super().__init__(width, height, title)
 
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
@@ -64,6 +50,8 @@ class GameView(arcade.View):
         self.score = 0
         self.score_text = None
 
+        self.music = None
+
         # Load sounds
         self.gun_sound = arcade.sound.load_sound(":resources:sounds/laser1.wav")
         self.hit_sound = arcade.sound.load_sound(":resources:sounds/phaseJump1.wav")
@@ -76,12 +64,6 @@ class GameView(arcade.View):
         self.z_pressed = False
 
         arcade.set_background_color(arcade.color.ARSENIC)
-
-        # Variables used to manage our music. See setup() for giving them
-        # values.
-        self.music_list = ["./Assets/Music/electronic-senses-indigo.mp3"]
-        self.current_song = 0
-        self.music = self.music_list
 
     def play_song(self):
         """ Play the song. """
@@ -108,7 +90,7 @@ class GameView(arcade.View):
         self.player_list.append(self.player_sprite)
         self.score = 0
 
-        self.enemy_sprite = Enemy("./Assets/sprites/container/enemy.png", 0.08)
+        self.enemy_sprite = Player("./Assets/sprites/container/enemy.png", 0.08)
         self.enemy_sprite.center_x = 50
         self.enemy_sprite.center_y = 50
         self.enemy_list.append(self.enemy_sprite)
@@ -222,60 +204,10 @@ class GameView(arcade.View):
             self.z_pressed = False
 
 
-class Player(arcade.Sprite):
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-
-class GameOverView(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.time_taken = 0
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        arcade.start_render()
-        """
-        Draw "Game over" across the screen.
-        """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
-
-        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
-        arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH / 2,
-                         200,
-                         arcade.color.GRAY,
-                         font_size=15,
-                         anchor_x="center")
-
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        self.window.show_view(game_view)
-
-
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Different Views Example")
-    window.total_score = 0
-    menu_view = MenuView()
-    window.show_view(menu_view)
+    """ Main method """
+    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window.setup()
     arcade.run()
 
 
