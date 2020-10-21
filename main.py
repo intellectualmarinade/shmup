@@ -1,5 +1,7 @@
 import arcade
+import time
 import os
+import math
 
 SPRITE_SCALING = 0.5
 SPRITE_SCALING_LASER = 0.8
@@ -12,16 +14,15 @@ MOVEMENT_SPEED = 8
 BULLET_SPEED = 15
 window = None
 
-
 class MenuView(arcade.View):
     def on_show(self):
         arcade.set_background_color(arcade.color.WHITE)
 
     def on_draw(self):
         arcade.start_render()
-        arcade.draw_text("Menu Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+        arcade.draw_text("Operation Pew Pew Boom", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
+                         arcade.color.BLACK, font_size=35, anchor_x="center")
+        arcade.draw_text("This is a title screen. Surprise!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
                          arcade.color.GRAY, font_size=20, anchor_x="center")
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
@@ -45,19 +46,40 @@ class InstructionView(arcade.View):
         self.window.show_view(game_view)
 
 
-class GameView(arcade.View):
+class Player(arcade.Sprite):
 
-    def __init__(self):
+    def update(self):
+        self.center_x += self.change_x
+        self.center_y += self.change_y
 
-        super().__init__()
+        if self.left < 0:
+            self.left = 0
+        elif self.right > SCREEN_WIDTH - 1:
+            self.right = SCREEN_WIDTH - 1
+
+        if self.bottom < 0:
+            self.bottom = 0
+        elif self.top > SCREEN_HEIGHT - 1:
+            self.top = SCREEN_HEIGHT - 1
+
+class GameView(arcade.Window):
+
+    def __init__(self, width, height, title):
+
+        super().__init__(width, height, title)
 
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
+
+        arcade.set_background_color(arcade.color.ARSENIC)
+
+        self.frame_count = 0
 
         # Variables that will hold sprite lists
         self.player_list = None
         self.bullet_list = None
         self.enemy_list = None
+        self.player = None
 
         # Set up the player info
         self.player_sprite = None
@@ -75,13 +97,11 @@ class GameView(arcade.View):
         self.down_pressed = False
         self.z_pressed = False
 
-        arcade.set_background_color(arcade.color.ARSENIC)
-
         # Variables used to manage our music. See setup() for giving them
         # values.
-        self.music_list = ["./Assets/Music/electronic-senses-indigo.mp3"]
+        self.music_list = []
         self.current_song = 0
-        self.music = self.music_list
+        self.music = None
 
     def play_song(self):
         """ Play the song. """
@@ -89,12 +109,14 @@ class GameView(arcade.View):
         if self.music:
             self.music.stop()
 
+        # Play the next song
+        print(f"Playing {self.music_list[self.current_song]}")
         self.music = arcade.Sound(self.music_list[self.current_song], streaming=True)
         self.music.play(MUSIC_VOLUME)
         # This is a quick delay. If we don't do this, our elapsed time is 0.0
         # and on_update will think the music is over and advance us to the next
         # song before starting this one.
-        # time.sleep(0.03)
+        time.sleep(0.03)
 
     def setup(self):
 
@@ -108,11 +130,40 @@ class GameView(arcade.View):
         self.player_list.append(self.player_sprite)
         self.score = 0
 
-        self.enemy_sprite = Enemy("./Assets/sprites/container/enemy.png", 0.08)
-        self.enemy_sprite.center_x = 50
-        self.enemy_sprite.center_y = 50
-        self.enemy_list.append(self.enemy_sprite)
-        self.score = 0
+        # Add top-left big-enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
+        enemy.center_x = 240
+        enemy.center_y = SCREEN_HEIGHT - enemy.height
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
+
+        # Add top-right big-enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
+        enemy.center_x = 440
+        enemy.center_y = SCREEN_HEIGHT - enemy.height
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
+
+        # Add mid-right enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
+        enemy.center_x = SCREEN_WIDTH - 120
+        enemy.center_y = 400
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
+
+        # Add mid-left enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
+        enemy.center_x = 100
+        enemy.center_y = 400
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
+
+        # Add mid-mid enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
+        enemy.center_x = 300
+        enemy.center_y = 400
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
 
         self.music_list = ["./Assets/Music/electronic-senses-indigo.mp3"]
         self.current_song = 0
@@ -129,6 +180,8 @@ class GameView(arcade.View):
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
 
     def on_update(self, delta_time):
+
+        self.frame_count += 1
 
         position = self.music.get_stream_position()
 
@@ -165,7 +218,7 @@ class GameView(arcade.View):
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
-                self.score += 1
+                self.score += 1000
 
                 # Hit Sound
                 arcade.play_sound(self.hit_sound)
@@ -174,7 +227,55 @@ class GameView(arcade.View):
             if bullet.bottom > SCREEN_HEIGHT:
                 bullet.remove_from_sprite_lists()
 
-        self.bullet_list.update()
+            # ENEMY FIRE
+            # Loop through each enemy that we have
+            for enemy in self.enemy_list:
+
+                # First, calculate the angle to the player. We could do this
+                # only when the bullet fires, but in this case we will rotate
+                # the enemy to face the player each frame, so we'll do this
+                # each frame.
+
+                # Position the start at the enemy's current location
+                start_x = enemy.center_x
+                start_y = enemy.center_y
+
+                # Get the destination location for the bullet
+                dest_x = self.player.center_x
+                dest_y = self.player.center_y
+
+                # Do math to calculate how to get the bullet to the destination.
+                # Calculation the angle in radians between the start points
+                # and end points. This is the angle the bullet will travel.
+                x_diff = dest_x - start_x
+                y_diff = dest_y - start_y
+                angle = math.atan2(y_diff, x_diff)
+
+                # Set the enemy to face the player.
+                enemy.angle = math.degrees(angle) - 90
+
+                # Shoot every 60 frames change of shooting each frame
+                if self.frame_count % 50 == 0:
+                    bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
+                    bullet.center_x = start_x
+                    bullet.center_y = start_y
+
+                    # Angle the bullet sprite
+                    bullet.angle = math.degrees(angle)
+
+                    # Taking into account the angle, calculate our change_x
+                    # and change_y. Velocity is how fast the bullet travels.
+                    bullet.change_x = math.cos(angle) * BULLET_SPEED
+                    bullet.change_y = math.sin(angle) * BULLET_SPEED
+
+                    self.bullet_list.append(bullet)
+
+            # Get rid of the bullet when it flies off-screen
+            for bullet in self.bullet_list:
+                if bullet.top < 0:
+                    bullet.remove_from_sprite_lists()
+
+            self.bullet_list.update()
 
     def on_key_press(self, key, modifiers):
 
@@ -186,6 +287,9 @@ class GameView(arcade.View):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
+
+            self.player.center_x = x
+            self.player.center_y = y
 
         if key == arcade.key.Z:
             self.z_pressed = True
@@ -222,60 +326,10 @@ class GameView(arcade.View):
             self.z_pressed = False
 
 
-class Player(arcade.Sprite):
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-
-class GameOverView(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.time_taken = 0
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        arcade.start_render()
-        """
-        Draw "Game over" across the screen.
-        """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
-
-        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
-        arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH / 2,
-                         200,
-                         arcade.color.GRAY,
-                         font_size=15,
-                         anchor_x="center")
-
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        self.window.show_view(game_view)
-
-
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Different Views Example")
-    window.total_score = 0
-    menu_view = MenuView()
-    window.show_view(menu_view)
+    """ Main method """
+    window = GameView(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window.setup()
     arcade.run()
 
 
