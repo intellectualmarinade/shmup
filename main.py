@@ -11,7 +11,7 @@ SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Operation Pew Pew Boom - Basic Movement & Firing"
 MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 8
-BULLET_SPEED = 15
+BULLET_SPEED = 9
 window = None
 
 class MenuView(arcade.View):
@@ -22,7 +22,7 @@ class MenuView(arcade.View):
         arcade.start_render()
         arcade.draw_text("Operation Pew Pew Boom", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
                          arcade.color.BLACK, font_size=35, anchor_x="center")
-        arcade.draw_text("This is a title screen. Surprise!", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+        arcade.draw_text("Imagine mindblowing graphics here.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
                          arcade.color.GRAY, font_size=20, anchor_x="center")
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
@@ -38,35 +38,22 @@ class InstructionView(arcade.View):
         arcade.start_render()
         arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
                          arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Click to advance", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+        arcade.draw_text("Use the arrow keys for movement.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+                         arcade.color.GRAY, font_size=20, anchor_x="center")
+        arcade.draw_text("Press the z key to fire.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100,
                          arcade.color.GRAY, font_size=20, anchor_x="center")
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         game_view = GameView()
+        game_view.setup()
         self.window.show_view(game_view)
 
 
-class Player(arcade.Sprite):
+class GameView(arcade.View):
 
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
+    def __init__(self):
 
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-class GameView(arcade.Window):
-
-    def __init__(self, width, height, title):
-
-        super().__init__(width, height, title)
+        super().__init__()
 
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
@@ -77,8 +64,9 @@ class GameView(arcade.Window):
 
         # Variables that will hold sprite lists
         self.player_list = None
-        self.bullet_list = None
+        self.pbullet_list = None
         self.enemy_list = None
+        self.ebullet_list = None
         self.player = None
 
         # Set up the player info
@@ -121,9 +109,11 @@ class GameView(arcade.Window):
     def setup(self):
 
         self.player_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
+        self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
+        self.ebullet_list = arcade.SpriteList()
 
+        # Add player ship
         self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
@@ -173,8 +163,9 @@ class GameView(arcade.Window):
 
         arcade.start_render()
         self.player_list.draw()
+        self.pbullet_list.draw()
         self.enemy_list.draw()
-        self.bullet_list.draw()
+        self.ebullet_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
@@ -192,6 +183,8 @@ class GameView(arcade.Window):
             self.advance_song()
             self.play_song()
 
+
+
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
@@ -207,14 +200,14 @@ class GameView(arcade.Window):
 
         self.player_list.update()
 
-        for bullet in self.bullet_list:
+        for pbullet in self.pbullet_list:
 
             # Check this bullet to see if it hit an enemy (collision detection)
-            hit_list = arcade.check_for_collision_with_list(bullet, self.enemy_list)
+            hit_list = arcade.check_for_collision_with_list(pbullet, self.enemy_list)
 
             # If it did, then remove the bullet
             if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
+                pbullet.remove_from_sprite_lists()
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
@@ -224,58 +217,16 @@ class GameView(arcade.Window):
                 arcade.play_sound(self.hit_sound)
 
             # If the bullet flies off-screen, remove it.
-            if bullet.bottom > SCREEN_HEIGHT:
-                bullet.remove_from_sprite_lists()
-
-            # ENEMY FIRE
-            # Loop through each enemy that we have
-            for enemy in self.enemy_list:
-
-                # First, calculate the angle to the player. We could do this
-                # only when the bullet fires, but in this case we will rotate
-                # the enemy to face the player each frame, so we'll do this
-                # each frame.
-
-                # Position the start at the enemy's current location
-                start_x = enemy.center_x
-                start_y = enemy.center_y
-
-                # Get the destination location for the bullet
-                dest_x = self.player.center_x
-                dest_y = self.player.center_y
-
-                # Do math to calculate how to get the bullet to the destination.
-                # Calculation the angle in radians between the start points
-                # and end points. This is the angle the bullet will travel.
-                x_diff = dest_x - start_x
-                y_diff = dest_y - start_y
-                angle = math.atan2(y_diff, x_diff)
-
-                # Set the enemy to face the player.
-                enemy.angle = math.degrees(angle) - 90
-
-                # Shoot every 60 frames change of shooting each frame
-                if self.frame_count % 50 == 0:
-                    bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-                    bullet.center_x = start_x
-                    bullet.center_y = start_y
-
-                    # Angle the bullet sprite
-                    bullet.angle = math.degrees(angle)
-
-                    # Taking into account the angle, calculate our change_x
-                    # and change_y. Velocity is how fast the bullet travels.
-                    bullet.change_x = math.cos(angle) * BULLET_SPEED
-                    bullet.change_y = math.sin(angle) * BULLET_SPEED
-
-                    self.bullet_list.append(bullet)
+            if pbullet.bottom > SCREEN_HEIGHT:
+                pbullet.remove_from_sprite_lists()
 
             # Get rid of the bullet when it flies off-screen
-            for bullet in self.bullet_list:
-                if bullet.top < 0:
-                    bullet.remove_from_sprite_lists()
+            for pbullet in self.pbullet_list:
+                if pbullet.top < 0:
+                    pbullet.remove_from_sprite_lists()
 
-            self.bullet_list.update()
+            self.pbullet_list.update()
+
 
     def on_key_press(self, key, modifiers):
 
@@ -288,28 +239,25 @@ class GameView(arcade.Window):
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
 
-            self.player.center_x = x
-            self.player.center_y = y
-
         if key == arcade.key.Z:
             self.z_pressed = True
             # Gunshot sound
             arcade.play_sound(self.gun_sound)
             # Create a bullet
-            bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", SPRITE_SCALING_LASER)
+            pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", SPRITE_SCALING_LASER)
 
             # This is to point the player's bullet up
-            bullet.angle = 90
+            pbullet.angle = 90
 
             # Give the bullet a speed
-            bullet.change_y = BULLET_SPEED
+            pbullet.change_y = BULLET_SPEED
 
             # Position the bullet
-            bullet.center_x = self.player_sprite.center_x
-            bullet.bottom = self.player_sprite.top
+            pbullet.center_x = self.player_sprite.center_x
+            pbullet.bottom = self.player_sprite.top
 
             # Add the bullet to the appropriate lists
-            self.bullet_list.append(bullet)
+            self.pbullet_list.append(pbullet)
 
     def on_key_release(self, key, modifiers):
 
@@ -326,12 +274,29 @@ class GameView(arcade.Window):
             self.z_pressed = False
 
 
+class Player(arcade.Sprite):
+
+    def update(self):
+        self.center_x += self.change_x
+        self.center_y += self.change_y
+
+        if self.left < 0:
+            self.left = 0
+        elif self.right > SCREEN_WIDTH - 1:
+            self.right = SCREEN_WIDTH - 1
+
+        if self.bottom < 0:
+            self.bottom = 0
+        elif self.top > SCREEN_HEIGHT - 1:
+            self.top = SCREEN_HEIGHT - 1
+
 def main():
     """ Main method """
-    window = GameView(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.setup()
-    arcade.run()
 
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    start_view = MenuView()
+    window.show_view(start_view)
+    arcade.run()
 
 if __name__ == "__main__":
     main()

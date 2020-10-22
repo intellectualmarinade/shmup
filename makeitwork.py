@@ -4,8 +4,9 @@ import math
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "TEST"
+SCREEN_TITLE = "FRUSTRATIONS"
 BULLET_SPEED = 10
+SPRITE_SCALING_LASER = 0.8
 
 
 class MyGame(arcade.Window):
@@ -21,13 +22,20 @@ class MyGame(arcade.Window):
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
 
+        # bg color
         arcade.set_background_color(arcade.color.BLACK)
+        # hide the mouse
 
+        self.set_mouse_visible(False)
         self.frame_count = 0
 
+        # Sprite lists
         self.enemy_list = None
-        self.bullet_list = None
+        self.ebullet_list = None
+        self.pbullet_list = None
         self.player_list = None
+
+        # Setup the player
         self.player = None
 
         # Set up the player info
@@ -48,12 +56,15 @@ class MyGame(arcade.Window):
 
     def setup(self):
         self.enemy_list = arcade.SpriteList()
-        self.bullet_list = arcade.SpriteList()
+        self.ebullet_list = arcade.SpriteList()
+        self.pbullet_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
 
         # Add player ship
-        self.player = arcade.Sprite("./Assets/sprites/container/nextpng.png", 0.07)
-        self.player_list.append(self.player)
+        self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
+        self.player_sprite.center_x = 50
+        self.player_sprite.center_y = 50
+        self.player_list.append(self.player_sprite)
 
         # Add top-left big-enemy ship
         enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
@@ -78,7 +89,14 @@ class MyGame(arcade.Window):
 
         # Add mid-mid enemy ship
         enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
-        enemy.center_x = 100
+        enemy.center_x = 320
+        enemy.center_y = 275
+        enemy.angle = 180
+        self.enemy_list.append(enemy)
+
+        # Add mid-left enemy ship
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
+        enemy.center_x = 175
         enemy.center_y = 400
         enemy.angle = 180
         self.enemy_list.append(enemy)
@@ -108,15 +126,71 @@ class MyGame(arcade.Window):
         arcade.start_render()
         self.player_list.draw()
         self.enemy_list.draw()
-        self.bullet_list.draw()
+        self.ebullet_list.draw()
+        self.pbullet_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        """
+        Called whenever the mouse moves.
+        """
+        self.player_sprite.center_x = x
+        self.player_sprite.center_y = y
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        """
+        Called whenever the mouse button is clicked.
+        """
+        # Gunshot sound
+        arcade.play_sound(self.gun_sound)
+        # Create a bullet
+        pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", SPRITE_SCALING_LASER)
+
+        # The image points to the right, and we want it to point up. So
+        # rotate it.
+        pbullet.angle = 90
+
+        # Give the bullet a speed
+        pbullet.change_y = BULLET_SPEED
+
+        # Position the bullet
+        pbullet.center_x = self.player_sprite.center_x
+        pbullet.bottom = self.player_sprite.top
+
+        # Add the bullet to the appropriate lists
+        self.pbullet_list.append(pbullet)
 
     def on_update(self, delta_time):
         """All the logic to move, and the game logic goes here. """
 
         self.frame_count += 1
+
+        # Call update on bullet sprites
+        self.pbullet_list.update()
+
+        # Loop through each bullet
+        for pbullet in self.pbullet_list:
+
+            # Check this bullet to see if it hit a coin
+            hit_list = arcade.check_for_collision_with_list(pbullet, self.enemy_list)
+
+            # If it did, get rid of the bullet
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+
+            # For every coin we hit, add to the score and remove the coin
+            for enemy in hit_list:
+                enemy.remove_from_sprite_lists()
+                self.score += 1000
+
+                # Hit Sound
+                arcade.play_sound(self.hit_sound)
+
+            # If the bullet flies off-screen, remove it.
+            if pbullet.bottom > SCREEN_HEIGHT:
+                pbullet.remove_from_sprite_lists()
 
         # Loop through each enemy that we have
         for enemy in self.enemy_list:
@@ -146,32 +220,32 @@ class MyGame(arcade.Window):
 
             # Shoot every 60 frames change of shooting each frame
             if self.frame_count % 50 == 0:
-                bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-                bullet.center_x = start_x
-                bullet.center_y = start_y
+                ebullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
+                ebullet.center_x = start_x
+                ebullet.center_y = start_y
 
                 # Angle the bullet sprite
-                bullet.angle = math.degrees(angle)
+                ebullet.angle = math.degrees(angle)
 
                 # Taking into account the angle, calculate our change_x
                 # and change_y. Velocity is how fast the bullet travels.
-                bullet.change_x = math.cos(angle) * BULLET_SPEED
-                bullet.change_y = math.sin(angle) * BULLET_SPEED
+                ebullet.change_x = math.cos(angle) * BULLET_SPEED
+                ebullet.change_y = math.sin(angle) * BULLET_SPEED
 
-                self.bullet_list.append(bullet)
+                self.ebullet_list.append(ebullet)
 
         # Get rid of the bullet when it flies off-screen
-        for bullet in self.bullet_list:
-            if bullet.top < 0:
-                bullet.remove_from_sprite_lists()
+        for ebullet in self.ebullet_list:
+            if ebullet.top < 0:
+                ebullet.remove_from_sprite_lists()
 
-        self.bullet_list.update()
+        self.ebullet_list.update()
+        self.pbullet_list.update()
 
     def on_mouse_motion(self, x, y, delta_x, delta_y):
         """Called whenever the mouse moves. """
         self.player.center_x = x
         self.player.center_y = y
-
 
 def main():
     """ Main method """
