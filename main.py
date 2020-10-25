@@ -9,6 +9,12 @@ SPRITE_SCALING_LASER = 0.8
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Operation Pew Pew Boom - Basic Movement & Firing"
+
+#Scrolling Background
+IMAGE_WIDTH = 600
+IMAGE_HEIGHT = 800
+SCROLL_SPEED = 0.25
+
 MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 8
 BULLET_SPEED = 9
@@ -67,6 +73,7 @@ class GameView(arcade.View):
         self.pbullet_list = None
         self.enemy_list = None
         self.ebullet_list = None
+        self.background_list = None
         self.player = None
 
         # Set up the player info
@@ -112,6 +119,7 @@ class GameView(arcade.View):
         self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.ebullet_list = arcade.SpriteList()
+        self.background_list = arcade.SpriteList()
 
         # Add player ship
         self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
@@ -155,6 +163,26 @@ class GameView(arcade.View):
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
+        # first background image
+        self.background_list = arcade.SpriteList()
+
+        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite.center_x = IMAGE_WIDTH // 2
+        self.background_sprite.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite)
+
+        # second background image
+        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite_2.center_x = SCREEN_WIDTH + IMAGE_WIDTH // 2
+        self.background_sprite_2.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite_2.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite_2)
+
         self.music_list = ["./Assets/Music/electronic-senses-indigo.mp3"]
         self.current_song = 0
         self.play_song()
@@ -166,6 +194,7 @@ class GameView(arcade.View):
         self.pbullet_list.draw()
         self.enemy_list.draw()
         self.ebullet_list.draw()
+        self.background_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
@@ -183,7 +212,13 @@ class GameView(arcade.View):
             self.advance_song()
             self.play_song()
 
+        #reset the images when they go past the screen
+        if self.background_sprite.left == -IMAGE_HEIGHT:
+            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
+        if self.background_sprite_2.left == -IMAGE_HEIGHT:
+            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
 
+        self.background_list.update()
 
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
