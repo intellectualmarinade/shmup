@@ -121,6 +121,26 @@ class GameView(arcade.View):
         self.ebullet_list = arcade.SpriteList()
         self.background_list = arcade.SpriteList()
 
+        # first background image
+        self.background_list = arcade.SpriteList()
+
+        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite.center_x = IMAGE_WIDTH // 2
+        self.background_sprite.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite)
+
+        # second background image
+        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite_2.center_x = SCREEN_WIDTH + IMAGE_WIDTH // 2
+        self.background_sprite_2.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite_2.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite_2)
+
         # Add player ship
         self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
         self.player_sprite.center_x = 50
@@ -163,26 +183,6 @@ class GameView(arcade.View):
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
-        # first background image
-        self.background_list = arcade.SpriteList()
-
-        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite.center_x = IMAGE_WIDTH // 2
-        self.background_sprite.center_y = SCREEN_HEIGHT // 2
-        self.background_sprite.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite)
-
-        # second background image
-        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite_2.center_x = SCREEN_WIDTH + IMAGE_WIDTH // 2
-        self.background_sprite_2.center_y = SCREEN_HEIGHT // 2
-        self.background_sprite_2.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite_2)
-
         self.music_list = ["./Assets/Music/electronic-senses-indigo.mp3"]
         self.current_song = 0
         self.play_song()
@@ -219,6 +219,53 @@ class GameView(arcade.View):
             self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
 
         self.background_list.update()
+
+        # Loop through each enemy that we have
+        for enemy in self.enemy_list:
+
+            # First, calculate the angle to the player. We could do this
+            # only when the bullet fires, but in this case we will rotate
+            # the enemy to face the player each frame, so we'll do this
+            # each frame.
+
+            # Position the start at the enemy's current location
+            start_x = enemy.center_x
+            start_y = enemy.center_y
+
+            # Get the destination location for the bullet
+            dest_x = self.player.center_x
+            dest_y = self.player.center_y
+
+            # Do math to calculate how to get the bullet to the destination.
+            # Calculation the angle in radians between the start points
+            # and end points. This is the angle the bullet will travel.
+            x_diff = dest_x - start_x
+            y_diff = dest_y - start_y
+            angle = math.atan2(y_diff, x_diff)
+
+            # Set the enemy to face the player.
+            enemy.angle = math.degrees(angle) - 90
+
+            # Shoot every 60 frames change of shooting each frame
+            if self.frame_count % 60 == 0:
+                bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
+                bullet.center_x = start_x
+                bullet.center_y = start_y
+
+                # Angle the bullet sprite
+                bullet.angle = math.degrees(angle)
+
+                # Taking into account the angle, calculate our change_x
+                # and change_y. Velocity is how fast the bullet travels.
+                bullet.change_x = math.cos(angle) * BULLET_SPEED
+                bullet.change_y = math.sin(angle) * BULLET_SPEED
+
+                self.bullet_list.append(bullet)
+
+        # Get rid of the bullet when it flies off-screen
+        for bullet in self.bullet_list:
+            if bullet.top < 0:
+                bullet.remove_from_sprite_lists()
 
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
@@ -273,6 +320,8 @@ class GameView(arcade.View):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
+            self.player.center_x = x
+            self.player.center_y = y
 
         if key == arcade.key.Z:
             self.z_pressed = True
