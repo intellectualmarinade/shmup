@@ -7,6 +7,10 @@ SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Python Hurts So Good"
 BULLET_SPEED = 4
 
+#Scrolling Background
+IMAGE_WIDTH = 600
+IMAGE_HEIGHT = 800
+SCROLL_SPEED = 0.50
 
 class MyGame(arcade.Window):
     """ Main application class """
@@ -29,12 +33,14 @@ class MyGame(arcade.Window):
         self.enemy_list = None
         self.bullet_list = None
         self.player_list = None
+        self.background_list = None
         self.player = None
 
     def setup(self):
         self.enemy_list = arcade.SpriteList()
         self.bullet_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
+        self.background_list = arcade.SpriteList()
 
         # Add player ship
         self.player = arcade.Sprite("./Assets/sprites/container/nextpng.png", 0.07)
@@ -75,19 +81,49 @@ class MyGame(arcade.Window):
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
+        # first background image
+        self.background_list = arcade.SpriteList()
+
+        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite.center_x = IMAGE_WIDTH // 2
+        self.background_sprite.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite)
+
+        # second background image
+        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
+
+        self.background_sprite_2.center_x = SCREEN_WIDTH  // 2
+        self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
+        self.background_sprite_2.change_y = -SCROLL_SPEED
+
+        self.background_list.append(self.background_sprite_2)
+
+
     def on_draw(self):
         """Render the screen. """
 
         arcade.start_render()
-
+        self.background_list.draw()
         self.enemy_list.draw()
         self.bullet_list.draw()
         self.player_list.draw()
+
 
     def on_update(self, delta_time):
         """All the logic to move, and the game logic goes here. """
 
         self.frame_count += 1
+
+        #reset the images when they go past the screen
+        if self.background_sprite.left == -IMAGE_HEIGHT:
+            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
+        if self.background_sprite_2.left == -IMAGE_HEIGHT:
+            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
+
+        self.background_list.update()
 
         # Loop through each enemy that we have
         for enemy in self.enemy_list:

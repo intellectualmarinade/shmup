@@ -15,9 +15,9 @@ IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
 SCROLL_SPEED = 0.25
 
-MUSIC_VOLUME = 0.1
+MUSIC_VOLUME = 0.07
 MOVEMENT_SPEED = 8
-BULLET_SPEED = 9
+BULLET_SPEED = 5
 window = None
 
 class MenuView(arcade.View):
@@ -177,8 +177,8 @@ class GameView(arcade.View):
         # second background image
         self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
 
-        self.background_sprite_2.center_x = SCREEN_WIDTH + IMAGE_WIDTH // 2
-        self.background_sprite_2.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite_2.center_x = SCREEN_WIDTH  // 2
+        self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
         self.background_sprite_2.change_y = -SCROLL_SPEED
 
         self.background_list.append(self.background_sprite_2)
@@ -190,11 +190,11 @@ class GameView(arcade.View):
     def on_draw(self):
 
         arcade.start_render()
+        self.background_list.draw()
         self.player_list.draw()
         self.pbullet_list.draw()
         self.enemy_list.draw()
         self.ebullet_list.draw()
-        self.background_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
