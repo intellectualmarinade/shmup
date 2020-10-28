@@ -13,7 +13,7 @@ SCREEN_TITLE = "Operation Pew Pew Boom - Basic Movement & Firing"
 #Scrolling Background
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.25
+SCROLL_SPEED = 0.5
 
 MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 8
@@ -69,11 +69,11 @@ class GameView(arcade.View):
         self.frame_count = 0
 
         # Variables that will hold sprite lists
+        self.background_list = None
         self.player_list = None
         self.pbullet_list = None
         self.enemy_list = None
         self.ebullet_list = None
-        self.background_list = None
         self.player = None
 
         # Set up the player info
@@ -115,19 +115,19 @@ class GameView(arcade.View):
 
     def setup(self):
 
+        self.background_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
         self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.ebullet_list = arcade.SpriteList()
-        self.background_list = arcade.SpriteList()
 
         # first background image
         self.background_list = arcade.SpriteList()
 
         self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
 
-        self.background_sprite.center_x = IMAGE_WIDTH // 2
-        self.background_sprite.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite.center_y = IMAGE_HEIGHT // 2
+        self.background_sprite.center_x = SCREEN_WIDTH // 2
         self.background_sprite.change_y = -SCROLL_SPEED
 
         self.background_list.append(self.background_sprite)
@@ -135,8 +135,8 @@ class GameView(arcade.View):
         # second background image
         self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
 
-        self.background_sprite_2.center_x = SCREEN_WIDTH + IMAGE_WIDTH // 2
-        self.background_sprite_2.center_y = SCREEN_HEIGHT // 2
+        self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_WIDTH // 2
+        self.background_sprite_2.center_x = SCREEN_WIDTH // 2
         self.background_sprite_2.change_y = -SCROLL_SPEED
 
         self.background_list.append(self.background_sprite_2)
@@ -190,11 +190,11 @@ class GameView(arcade.View):
     def on_draw(self):
 
         arcade.start_render()
+        self.background_list.draw()
         self.player_list.draw()
         self.pbullet_list.draw()
         self.enemy_list.draw()
         self.ebullet_list.draw()
-        self.background_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
@@ -202,6 +202,15 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
 
         self.frame_count += 1
+
+        #reset the images when they go past the screen
+        if self.background_sprite.left == -IMAGE_HEIGHT:
+            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
+
+        if self.background_sprite_2.left == -IMAGE_HEIGHT:
+            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
+
+        self.background_list.update()
 
         position = self.music.get_stream_position()
 
@@ -211,14 +220,6 @@ class GameView(arcade.View):
         if position == 0.0:
             self.advance_song()
             self.play_song()
-
-        #reset the images when they go past the screen
-        if self.background_sprite.left == -IMAGE_HEIGHT:
-            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
-        if self.background_sprite_2.left == -IMAGE_HEIGHT:
-            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT
-
-        self.background_list.update()
 
         # Loop through each enemy that we have
         for enemy in self.enemy_list:
@@ -233,8 +234,8 @@ class GameView(arcade.View):
             start_y = enemy.center_y
 
             # Get the destination location for the bullet
-            dest_x = self.player.center_x
-            dest_y = self.player.center_y
+            dest_x = self.player_sprite.center_x
+            dest_y = self.player_sprite.center_y
 
             # Do math to calculate how to get the bullet to the destination.
             # Calculation the angle in radians between the start points
@@ -248,24 +249,26 @@ class GameView(arcade.View):
 
             # Shoot every 60 frames change of shooting each frame
             if self.frame_count % 60 == 0:
-                bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
-                bullet.center_x = start_x
-                bullet.center_y = start_y
+                ebullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
+                ebullet.center_x = start_x
+                ebullet.center_y = start_y
 
                 # Angle the bullet sprite
-                bullet.angle = math.degrees(angle)
+                ebullet.angle = math.degrees(angle)
 
                 # Taking into account the angle, calculate our change_x
                 # and change_y. Velocity is how fast the bullet travels.
-                bullet.change_x = math.cos(angle) * BULLET_SPEED
-                bullet.change_y = math.sin(angle) * BULLET_SPEED
+                ebullet.change_x = math.cos(angle) * BULLET_SPEED
+                ebullet.change_y = math.sin(angle) * BULLET_SPEED
 
-                self.bullet_list.append(bullet)
+                self.ebullet_list.append(ebullet)
 
         # Get rid of the bullet when it flies off-screen
-        for bullet in self.bullet_list:
-            if bullet.top < 0:
-                bullet.remove_from_sprite_lists()
+        for ebullet in self.ebullet_list:
+            if ebullet.top < 0:
+                ebullet.remove_from_sprite_lists()
+
+        self.ebullet_list.update()
 
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
@@ -320,8 +323,7 @@ class GameView(arcade.View):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
-            self.player.center_x = x
-            self.player.center_y = y
+
 
         if key == arcade.key.Z:
             self.z_pressed = True

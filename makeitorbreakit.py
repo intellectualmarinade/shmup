@@ -10,7 +10,7 @@ BULLET_SPEED = 4
 #Scrolling Background
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.50
+SCROLL_SPEED = 0.5
 
 class MyGame(arcade.Window):
     """ Main application class """
