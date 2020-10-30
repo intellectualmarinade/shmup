@@ -8,17 +8,37 @@ SPRITE_SCALING_LASER = 0.8
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "Operation Pew Pew Boom - Basic Movement & Firing"
+SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
 
 #Scrolling Background
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.5
+SCROLL_SPEED = 0.7
 
 MUSIC_VOLUME = 0.1
-MOVEMENT_SPEED = 8
-BULLET_SPEED = 9
+MOVEMENT_SPEED = 5
+BULLET_SPEED = 5
 window = None
+
+class Explosion(arcade.Sprite):
+    """ This class creates an explosion animation """
+
+    def __init__(self, texture_list):
+        super().__init__()
+
+        # Start at the first frame
+        self.current_texture = 0
+        self.textures = texture_list
+
+    def update(self):
+
+        # Update to the next frame of the animation. If we are at the end
+        # of our frames, then delete this sprite.
+        self.current_texture += 1
+        if self.current_texture < len(self.textures):
+            self.set_texture(self.current_texture)
+        else:
+            self.remove_from_sprite_lists()
 
 class MenuView(arcade.View):
     def on_show(self):
@@ -98,6 +118,20 @@ class GameView(arcade.View):
         self.current_song = 0
         self.music = None
 
+        # Pre-load the animation frames of explosions. We don't do this in the __init__
+        # of the explosion sprite because it
+        # takes too long and would cause the game to pause.
+        self.explosion_texture_list = []
+
+        columns = 16
+        count = 60
+        sprite_width = 256
+        sprite_height = 256
+        file_name = ":resources:images/spritesheets/explosion.png"
+
+        # Load the explosions from a sprite sheet
+        self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
+
     def play_song(self):
         """ Play the song. """
         # Stop what is currently playing.
@@ -120,6 +154,7 @@ class GameView(arcade.View):
         self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.ebullet_list = arcade.SpriteList()
+        self.explosions_list = arcade.SpriteList()
 
         # first background image
         self.background_list = arcade.SpriteList()
@@ -195,6 +230,7 @@ class GameView(arcade.View):
         self.pbullet_list.draw()
         self.enemy_list.draw()
         self.ebullet_list.draw()
+        self.explosions_list.draw()
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
@@ -202,6 +238,8 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
 
         self.frame_count += 1
+
+        self.explosions_list.update()
 
         #reset the images when they go past the screen
         if self.background_sprite.left == -IMAGE_HEIGHT:
@@ -212,6 +250,8 @@ class GameView(arcade.View):
 
         self.background_list.update()
 
+
+        #Code specific to background music
         position = self.music.get_stream_position()
 
         # The position pointer is reset to 0 right after we finish the song.
@@ -221,6 +261,7 @@ class GameView(arcade.View):
             self.advance_song()
             self.play_song()
 
+        # Code specific for Enemy Aim
         # Loop through each enemy that we have
         for enemy in self.enemy_list:
 
@@ -293,6 +334,19 @@ class GameView(arcade.View):
             # If it did, then remove the bullet
             if len(hit_list) > 0:
                 pbullet.remove_from_sprite_lists()
+
+                # Make an explosion
+                explosion = Explosion(self.explosion_texture_list)
+
+                # Move it to the location of the coin
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+
+                # Call update() because it sets which image we start on
+                explosion.update()
+
+                # Add to a list of sprites that are explosions
+                self.explosions_list.append(explosion)
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
