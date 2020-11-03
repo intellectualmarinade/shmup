@@ -10,15 +10,16 @@ SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
 
-#Scrolling Background
+# Scrolling Background
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.7
+SCROLL_SPEED = 0.2
 
 MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 5
 BULLET_SPEED = 5
 window = None
+
 
 class Explosion(arcade.Sprite):
     """ This class creates an explosion animation """
@@ -39,6 +40,7 @@ class Explosion(arcade.Sprite):
             self.set_texture(self.current_texture)
         else:
             self.remove_from_sprite_lists()
+
 
 class MenuView(arcade.View):
     def on_show(self):
@@ -73,6 +75,34 @@ class InstructionView(arcade.View):
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)
+
+
+class GameOverView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.time_taken = 0
+
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
+
+    def on_draw(self):
+        arcade.start_render()
+        """
+        Draw "Game over" across the screen.
+        """
+        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
+        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
+
+        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
+        arcade.draw_text(f"Time taken: {time_taken_formatted}",
+                         SCREEN_WIDTH / 2,
+                         200,
+                         arcade.color.GRAY,
+                         font_size=15,
+                         anchor_x="center")
+
+        output_total = f"Total Score: {self.window.total_score}"
+        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
 
 
 class GameView(arcade.View):
@@ -238,10 +268,45 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
 
         self.frame_count += 1
-
         self.explosions_list.update()
 
-        #reset the images when they go past the screen
+        # Call update on all sprites (The sprites don't do much in this
+        # example though.)
+        self.ebullet_list.update()
+        self.player_list.update()
+
+        # Generate a list of all sprites that collided with the player.
+        hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list)
+
+        # Loop through each colliding sprite, remove it
+        for ebullet in hit_list:
+            ebullet.kill()
+
+        if len(hit_list) > 0:
+            ebullet.remove_from_sprite_lists()
+
+            # Make an explosion
+            explosion = Explosion(self.explosion_texture_list)
+
+            # Move it to the location of the coin
+            explosion.center_x = hit_list[0].center_x
+            explosion.center_y = hit_list[0].center_y
+
+            # Call update() because it sets which image we start on
+            explosion.update()
+
+            # Add to a list of sprites that are explosions
+            self.explosions_list.append(explosion)
+
+        # If we've collected all the games, then move to a "GAME_OVER"
+        # state.
+        if len(self.player_list) == 0:
+            game_over_view = GameOverView()
+            game_over_view.time_taken = self.time_taken
+            self.window.set_mouse_visible(True)
+            self.window.show_view(game_over_view)
+
+        # reset the images when they go past the screen
         if self.background_sprite.left == -IMAGE_HEIGHT:
             self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
 
@@ -250,8 +315,7 @@ class GameView(arcade.View):
 
         self.background_list.update()
 
-
-        #Code specific to background music
+        # Code specific to background music
         position = self.music.get_stream_position()
 
         # The position pointer is reset to 0 right after we finish the song.
@@ -366,7 +430,6 @@ class GameView(arcade.View):
 
             self.pbullet_list.update()
 
-
     def on_key_press(self, key, modifiers):
 
         if key == arcade.key.UP:
@@ -377,7 +440,6 @@ class GameView(arcade.View):
             self.left_pressed = True
         elif key == arcade.key.RIGHT:
             self.right_pressed = True
-
 
         if key == arcade.key.Z:
             self.z_pressed = True
@@ -430,6 +492,7 @@ class Player(arcade.Sprite):
         elif self.top > SCREEN_HEIGHT - 1:
             self.top = SCREEN_HEIGHT - 1
 
+
 def main():
     """ Main method """
 
@@ -437,6 +500,7 @@ def main():
     start_view = MenuView()
     window.show_view(start_view)
     arcade.run()
+
 
 if __name__ == "__main__":
     main()
