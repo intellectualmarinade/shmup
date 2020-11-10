@@ -2,108 +2,26 @@ import arcade
 import time
 import os
 import math
+import views
+import infinite_scroll_working as background
 
-SPRITE_SCALING = 0.5
-SPRITE_SCALING_LASER = 0.8
+# modules
+from modules.explosion import Explosion
+from modules.player import Player
 
+# Scrolling Background Constants
+SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
-
-# Scrolling Background
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
 SCROLL_SPEED = 3
-
-MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 5
 BULLET_SPEED = 5
+SPRITE_SCALING = 0.5
+SPRITE_SCALING_LASER = 0.8
+MUSIC_VOLUME = 0.1
 window = None
-
-
-class Explosion(arcade.Sprite):
-    """ This class creates an explosion animation """
-
-    def __init__(self, texture_list):
-        super().__init__()
-
-        # Start at the first frame
-        self.current_texture = 0
-        self.textures = texture_list
-
-    def update(self):
-
-        # Update to the next frame of the animation. If we are at the end
-        # of our frames, then delete this sprite.
-        self.current_texture += 1
-        if self.current_texture < len(self.textures):
-            self.set_texture(self.current_texture)
-        else:
-            self.remove_from_sprite_lists()
-
-
-class MenuView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.WHITE)
-
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Operation Pew Pew Boom", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=35, anchor_x="center")
-        arcade.draw_text("Imagine mindblowing graphics here.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        instructions_view = InstructionView()
-        self.window.show_view(instructions_view)
-
-
-class InstructionView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.ORANGE_PEEL)
-
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Use the arrow keys for movement.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-        arcade.draw_text("Press the z key to fire.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        game_view.setup()
-        self.window.show_view(game_view)
-
-
-class GameOverView(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.time_taken = 0
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        arcade.start_render()
-        """
-        Draw "Game over" across the screen.
-        """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
-
-        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
-        arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH / 2,
-                         200,
-                         arcade.color.GRAY,
-                         font_size=15,
-                         anchor_x="center")
-
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
-
 
 class GameView(arcade.View):
 
@@ -179,32 +97,12 @@ class GameView(arcade.View):
 
     def setup(self):
 
-        self.background_list = arcade.SpriteList()
+        background.MyGame.setup(self)
         self.player_list = arcade.SpriteList()
         self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.ebullet_list = arcade.SpriteList()
         self.explosions_list = arcade.SpriteList()
-
-        # first background image
-        self.background_list = arcade.SpriteList()
-
-        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite.center_x = IMAGE_WIDTH // 2
-        self.background_sprite.center_y = SCREEN_HEIGHT // 2
-        self.background_sprite.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite)
-
-        # second background image
-        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite_2.center_x = SCREEN_WIDTH // 2
-        self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
-        self.background_sprite_2.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite_2)
 
         # Add player ship
         self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
@@ -255,7 +153,7 @@ class GameView(arcade.View):
     def on_draw(self):
 
         arcade.start_render()
-        self.background_list.draw()
+        background.MyGame.on_draw(self)
         self.player_list.draw()
         self.pbullet_list.draw()
         self.enemy_list.draw()
@@ -267,13 +165,7 @@ class GameView(arcade.View):
 
     def update(self, delta_time):
 
-        #reset the images when they go past the screen
-        if self.background_sprite.bottom == -IMAGE_HEIGHT:
-            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
-
-        if self.background_sprite_2.bottom == -IMAGE_HEIGHT:
-            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
-
+        background.MyGame.on_update(self, delta_time)
         self.background_list.update()
 
     def on_update(self, delta_time):
@@ -478,28 +370,12 @@ class GameView(arcade.View):
             self.z_pressed = False
 
 
-class Player(arcade.Sprite):
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-
 def main():
     """ Main method """
 
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    start_view = MenuView()
+    start_view = views.MenuView()
+    game_view = GameView()
     window.show_view(start_view)
     arcade.run()
 
