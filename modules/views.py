@@ -1,5 +1,5 @@
 import arcade
-import main_background_test_fork as gameview
+import main as gameview
 
 # Scrolling Background Constants
 SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"

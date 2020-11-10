@@ -2,160 +2,21 @@ import arcade
 import time
 import os
 import math
-import random
-import pyautogui
-from datetime import datetime, timedelta # For random seed.
+import modules.views
+import infinite_bg as background
+from modules.explosion import Explosion
+from modules.player import Player
 
-SPRITE_SCALING = 0.5
-SPRITE_SCALING_LASER = 0.8
-
+# Scrolling Background Constants
+SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
-
-# Scrolling Background
-IMAGE_WIDTH = 600
-IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.2
-
-MUSIC_VOLUME = 0.1
 MOVEMENT_SPEED = 5
 BULLET_SPEED = 5
+SPRITE_SCALING = 0.5
+SPRITE_SCALING_LASER = 0.8
+MUSIC_VOLUME = 0.1
 window = None
-
-# Set up constants
-DIFFICULTY = 5
-ENEMY_COUNT_INITIAL = DIFFICULTY + 2
-ENEMY_SPEED = 2 + (DIFFICULTY/10)
-SCALE = 0.25
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 800
-MONITOR_RES_WIDTH, MONITOR_RES_HEIGHT = pyautogui.size()
-#   Make sure SCREEN_WIDTH is not bigger than monitor width.
-if SCREEN_WIDTH > MONITOR_RES_WIDTH:
-    SCREEN_WIDTH = MONITOR_RES_WIDTH
-#   Make sure SCREEN_HEIGHT is not bigger than monitor width.
-if SCREEN_HEIGHT > MONITOR_RES_HEIGHT:
-    SCREEN_HEIGHT = MONITOR_RES_HEIGHT
-#   Number of ice blocks based on the screen width.
-BLOCKS_NUMBER = int(SCREEN_WIDTH/24)
-#   Limit enemies to edges of screen.
-SPACE_OFFSCREEN = 1
-LIMIT_LEFT = -SPACE_OFFSCREEN
-LIMIT_RIGHT = SCREEN_WIDTH + SPACE_OFFSCREEN
-LIMIT_BOTTOM = -SPACE_OFFSCREEN
-LIMIT_TOP = SCREEN_HEIGHT + SPACE_OFFSCREEN
-
-# Class for the Sprite that represents an enemy.
-class EnemySprite(arcade.Sprite):
-    # Initialize enemy size, movement-type timers, and speed
-    def __init__(self, image_file_name, scale):
-        super().__init__(image_file_name, scale=scale)
-        self.size = 0
-        self.timer_rand = 0
-        self.timer_smart = 0
-        self.speed = 2 + (DIFFICULTY/10)
-    # Move the enemy.
-    def update(self):
-        # If enemy is at a screen boundary,
-        # cause a "bounce" toward opposite direction.
-        super().update()
-        if self.center_x < LIMIT_LEFT:
-            self.center_x = LIMIT_LEFT
-            self.change_x *= -1
-        if self.center_x > LIMIT_RIGHT:
-            self.center_x = LIMIT_RIGHT
-            self.change_x *= -1
-        if self.center_y > LIMIT_TOP:
-            self.center_y = LIMIT_TOP
-            self.change_y *= -1
-        if self.center_y < LIMIT_BOTTOM:
-            self.center_y = LIMIT_BOTTOM
-            self.change_y *= -1
-
-class Explosion(arcade.Sprite):
-    """ This class creates an explosion animation """
-
-    def __init__(self, texture_list):
-        super().__init__()
-
-        # Start at the first frame
-        self.current_texture = 0
-        self.textures = texture_list
-
-    def update(self):
-
-        # Update to the next frame of the animation. If we are at the end
-        # of our frames, then delete this sprite.
-        self.current_texture += 1
-        if self.current_texture < len(self.textures):
-            self.set_texture(self.current_texture)
-        else:
-            self.remove_from_sprite_lists()
-
-
-class MenuView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.WHITE)
-
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Operation Pew Pew Boom", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=35, anchor_x="center")
-        arcade.draw_text("Imagine mindblowing graphics here.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        instructions_view = InstructionView()
-        self.window.show_view(instructions_view)
-
-
-class InstructionView(arcade.View):
-    def on_show(self):
-        arcade.set_background_color(arcade.color.ORANGE_PEEL)
-
-    def on_draw(self):
-        arcade.start_render()
-        arcade.draw_text("Instructions Screen", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Use the arrow keys for movement.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-        arcade.draw_text("Press the z key to fire.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        game_view.setup()
-        self.window.show_view(game_view)
-
-
-class GameOverView(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.time_taken = 0
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        arcade.start_render()
-        """
-        Draw "Game over" across the screen.
-        """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
-
-        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
-        arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH / 2,
-                         200,
-                         arcade.color.GRAY,
-                         font_size=15,
-                         anchor_x="center")
-
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
-
 
 class GameView(arcade.View):
 
@@ -171,7 +32,6 @@ class GameView(arcade.View):
         self.frame_count = 0
 
         # Variables that will hold sprite lists
-        self.background_list = None
         self.player_list = None
         self.pbullet_list = None
         self.enemy_list = None
@@ -231,32 +91,12 @@ class GameView(arcade.View):
 
     def setup(self):
 
-        self.background_list = arcade.SpriteList()
+        background.MyGame.setup(self)
         self.player_list = arcade.SpriteList()
         self.pbullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.ebullet_list = arcade.SpriteList()
         self.explosions_list = arcade.SpriteList()
-
-        # first background image
-        self.background_list = arcade.SpriteList()
-
-        self.background_sprite = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite.center_y = IMAGE_HEIGHT // 2
-        self.background_sprite.center_x = SCREEN_WIDTH // 2
-        self.background_sprite.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite)
-
-        # second background image
-        self.background_sprite_2 = arcade.Sprite("./Assets/sprites/container/seamlessspace_0.png")
-
-        self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_WIDTH // 2
-        self.background_sprite_2.center_x = SCREEN_WIDTH // 2
-        self.background_sprite_2.change_y = -SCROLL_SPEED
-
-        self.background_list.append(self.background_sprite_2)
 
         # Add player ship
         self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
@@ -265,7 +105,6 @@ class GameView(arcade.View):
         self.player_list.append(self.player_sprite)
         self.score = 0
 
-        #Tony's suggestion - use random for ship placement with limits
         # Add top-left big-enemy ship
         enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
         enemy.center_x = 240
@@ -308,7 +147,7 @@ class GameView(arcade.View):
     def on_draw(self):
 
         arcade.start_render()
-        self.background_list.draw()
+        background.MyGame.on_draw(self)
         self.player_list.draw()
         self.pbullet_list.draw()
         self.enemy_list.draw()
@@ -318,18 +157,18 @@ class GameView(arcade.View):
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
 
+    def update(self, delta_time):
+
+        background.MyGame.update(self, delta_time)
+        self.background_list.update()
 
     def on_update(self, delta_time):
 
         self.frame_count += 1
         self.explosions_list.update()
-
-        # Call update on all sprites (The sprites don't do much in this
-        # example though.)
         self.ebullet_list.update()
         self.player_list.update()
 
-        # Generate a list of all sprites that collided with the player.
         hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list)
 
         # Loop through each colliding sprite, remove it
@@ -339,35 +178,19 @@ class GameView(arcade.View):
         if len(hit_list) > 0:
             ebullet.remove_from_sprite_lists()
 
-            # Make an explosion
             explosion = Explosion(self.explosion_texture_list)
-
-            # Move it to the location of the coin
             explosion.center_x = hit_list[0].center_x
             explosion.center_y = hit_list[0].center_y
-
-            # Call update() because it sets which image we start on
             explosion.update()
-
-            # Add to a list of sprites that are explosions
             self.explosions_list.append(explosion)
 
         # If we've collected all the games, then move to a "GAME_OVER"
         # state.
         if len(self.player_list) == 0:
-            game_over_view = GameOverView()
+            game_over_view = modules.gameover.GameOverView
             game_over_view.time_taken = self.time_taken
             self.window.set_mouse_visible(True)
             self.window.show_view(game_over_view)
-
-        # reset the images when they go past the screen
-        if self.background_sprite.left == -IMAGE_HEIGHT:
-            self.background_sprite.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
-
-        if self.background_sprite_2.left == -IMAGE_HEIGHT:
-            self.background_sprite_2.center_y = SCREEN_HEIGHT + IMAGE_HEIGHT // 2
-
-        self.background_list.update()
 
         # Code specific to background music
         position = self.music.get_stream_position()
@@ -379,7 +202,7 @@ class GameView(arcade.View):
             self.advance_song()
             self.play_song()
 
-        # Code specific for Enemy Aim & MOVEMENT
+        # Code specific for Enemy Aim
         # Loop through each enemy that we have
         for enemy in self.enemy_list:
 
@@ -388,88 +211,9 @@ class GameView(arcade.View):
             # the enemy to face the player each frame, so we'll do this
             # each frame.
 
-            # Tony's suggestion to delete (Position the start at the enemy's current location)
-            #start_x = enemy.center_x
-            #start_y = enemy.center_y
-
-            random.seed(datetime.now() + timedelta(0, enemy_number))
-            # Update the two enemy movement timers in a countdown fashion.
-            enemy.timer_rand -= 1
-            enemy.timer_smart -= 1
-
-            # Set up/reset variables for enemy direction of movement.
-            dir_x = 0
-            dir_y = 0
-
-            # Did both enemy movement direction timers run out?
-            if enemy.timer_rand < 1 and enemy.timer_smart < 1:
-                # Random number based on difficulty so below
-                # we can decide if the enemy will move randomly
-                # or toward the Player.
-                random_or_smart = random.randint(1, 20 + (self.player_sprite.difficulty * 2))
-            else:
-                # Make sure no random movment happens.
-                random_or_smart = 1000
-
-            # Decide whether to move enemy randomly or "intellligently".
-            # Lower the "20" if you want random movement more often.
-            if random_or_smart < 20:
-                # How long to continue in the random direction?
-                enemy.timer_rand = int(fps * 6)  # ~ 6 seconds
-                enemy.timer_smart = 0
-                # Random 8 directions N, S, E, W, NE, SE, NW, SW
-                direction = random.randint(1, 8)
-                if direction == 1:
-                    dir_y = 1
-                elif direction == 2:
-                    dir_x = 1
-                    dir_y = 1
-                elif direction == 3:
-                    dir_x = 1
-                elif direction == 4:
-                    dir_x = 1
-                    dir_y = 1
-                elif direction == 5:
-                    dir_y = 1
-                elif direction == 6:
-                    dir_y = 1
-                    dir_x = 1
-                elif direction == 7:
-                    dir_x = 1
-                elif direction == 8:
-                    dir_x = 1
-                    dir_y = 1
-                enemy.change_x = dir_x * (enemy_speedy - 2)
-                enemy.change_y = dir_y * (enemy_speedy - 2)
-            elif enemy.timer_rand < 1:
-                enemy.timer_rand = 0
-                # If the movement timer for smart movement runs out,
-                # reset it here.
-                if enemy.timer_smart < 1:
-                    # Set smart movement timer to random number between
-                    # 1 second and 3 seconds.
-                    enemy.timer_smart = random.randint(int(fps * 1), int(fps * 3))
-                y_pos = enemy.center_y
-                x_pos = enemy.center_x
-                # If Player Sprite is above enemy, set y direction to up.
-                if player_pos_y > y_pos:
-                    dir_y = 1
-                # If Player Sprite is to the right of enemy, set x direction to right.
-                if player_pos_x > x_pos:
-                    dir_x = 1
-                # If Player Sprite is below enemy, set y direction to down.
-                if player_pos_y < y_pos:
-                    dir_y = -1
-                # If Player Sprite is to the left of enemy, set x direction to left.
-                if player_pos_x < x_pos:
-                    dir_x = -1
-                # Set the current enemy Sprite's x and y directions based on above
-                # four tests, modified with speed.
-                enemy.change_x = dir_x * (enemy_speedy - 2)
-                enemy.change_y = dir_y * (enemy_speedy - 2)
-            # Set a new x/y position on the screen for THIS enemy.
-            enemy.center_x += enemy.change_x
-            enemy.center_y += enemy.change_y
+            # Position the start at the enemy's current location
+            start_x = enemy.center_x
+            start_y = enemy.center_y
 
             # Get the destination location for the bullet
             dest_x = self.player_sprite.center_x
@@ -523,7 +267,6 @@ class GameView(arcade.View):
 
         self.player_list.update()
 
-        #player bullet hit collision
         for pbullet in self.pbullet_list:
 
             # Check this bullet to see if it hit an enemy (collision detection)
@@ -610,28 +353,12 @@ class GameView(arcade.View):
             self.z_pressed = False
 
 
-class Player(arcade.Sprite):
-
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.left < 0:
-            self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-
-        if self.bottom < 0:
-            self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-
-
 def main():
     """ Main method """
 
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    start_view = MenuView()
+    start_view = modules.views.MenuView()
+    game_view = GameView()
     window.show_view(start_view)
     arcade.run()
 
