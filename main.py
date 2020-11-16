@@ -2,8 +2,10 @@ import arcade
 import time
 import os
 import math
+import modules.enemy
+import modules.audio
 import modules.views
-import infinite_bg as background
+import modules.infinite_bg as background
 from modules.explosion import Explosion
 from modules.player import Player
 
@@ -14,7 +16,6 @@ SCREEN_HEIGHT = 800
 MOVEMENT_SPEED = 5
 BULLET_SPEED = 5
 SPRITE_SCALING = 0.5
-SPRITE_SCALING_LASER = 0.8
 MUSIC_VOLUME = 0.1
 window = None
 
@@ -42,10 +43,6 @@ class GameView(arcade.View):
         self.player_sprite = None
         self.score = 0
         self.score_text = None
-
-        # Load sounds
-        self.gun_sound = arcade.sound.load_sound(":resources:sounds/laser1.wav")
-        self.hit_sound = arcade.sound.load_sound(":resources:sounds/phaseJump1.wav")
 
         # Track the current state of what key is pressed
         self.left_pressed = False
@@ -99,42 +96,21 @@ class GameView(arcade.View):
         self.explosions_list = arcade.SpriteList()
 
         # Add player ship
-        self.player_sprite = Player("./Assets/sprites/container/nextpng.png", 0.08)
+        self.player_sprite = Player("./Assets/sprites/container/playership.png", 0.08)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
         self.score = 0
 
-        # Add top-left big-enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
-        enemy.center_x = 240
-        enemy.center_y = SCREEN_HEIGHT - enemy.height
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
         # Add top-right big-enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy.png", 1.0)
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy01.png", 1.0)
         enemy.center_x = 440
         enemy.center_y = SCREEN_HEIGHT - enemy.height
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
-        # Add mid-right enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
-        enemy.center_x = SCREEN_WIDTH - 120
-        enemy.center_y = 400
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        # Add mid-left enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
-        enemy.center_x = 100
-        enemy.center_y = 400
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
         # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy2.png", 1.0)
+        enemy = arcade.Sprite("./Assets/sprites/container/enemy02.png", 1.0)
         enemy.center_x = 300
         enemy.center_y = 400
         enemy.angle = 180
@@ -184,13 +160,13 @@ class GameView(arcade.View):
             explosion.update()
             self.explosions_list.append(explosion)
 
-        # If we've collected all the games, then move to a "GAME_OVER"
-        # state.
+        # Trigger Game Over
+
         if len(self.player_list) == 0:
             game_over_view = modules.gameover.GameOverView
             game_over_view.time_taken = self.time_taken
-            self.window.set_mouse_visible(True)
             self.window.show_view(game_over_view)
+
 
         # Code specific to background music
         position = self.music.get_stream_position()
@@ -234,12 +210,7 @@ class GameView(arcade.View):
                 ebullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 ebullet.center_x = start_x
                 ebullet.center_y = start_y
-
-                # Angle the bullet sprite
                 ebullet.angle = math.degrees(angle)
-
-                # Taking into account the angle, calculate our change_x
-                # and change_y. Velocity is how fast the bullet travels.
                 ebullet.change_x = math.cos(angle) * BULLET_SPEED
                 ebullet.change_y = math.sin(angle) * BULLET_SPEED
 
@@ -321,9 +292,9 @@ class GameView(arcade.View):
         if key == arcade.key.Z:
             self.z_pressed = True
             # Gunshot sound
-            arcade.play_sound(self.gun_sound)
+            arcade.play_sound(self.gun_sound, volume = 0.1)
             # Create a bullet
-            pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", SPRITE_SCALING_LASER)
+            pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
 
             # This is to point the player's bullet up
             pbullet.angle = 90
