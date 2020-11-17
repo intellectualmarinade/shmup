@@ -18,7 +18,7 @@ class GameOverView(arcade.View):
 
         time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
         arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH / 2,
+                         SCREEN_WIDTH/2,
                          200,
                          arcade.color.GRAY,
                          font_size=15,
@@ -26,3 +26,7 @@ class GameOverView(arcade.View):
 
         output_total = f"Total Score: {self.window.total_score}"
         arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view = GameView()
+        self.window.show_view(game_view)

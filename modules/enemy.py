@@ -1,3 +1,10 @@
+import arcade # Game-making-oriented library for Python.
+import math # For various math functions.
+import random # For various random number generation.
+import os # For getting resource files into the game.
+import pyautogui # For getting monitor resolution.
+from datetime import datetime, timedelta # For random seed.
+
 # Set up constants
 DIFFICULTY = 5
 ENEMY_COUNT_INITIAL = DIFFICULTY + 2

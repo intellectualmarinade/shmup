@@ -2,12 +2,44 @@ import arcade
 import time
 import os
 import math
-import modules.enemy
+import modules.gameover
 import modules.audio
 import modules.views
 import modules.infinite_bg as background
 from modules.explosion import Explosion
 from modules.player import Player
+
+class GameOverView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.time_taken = 0
+
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
+
+    def on_draw(self):
+        arcade.start_render()
+        """
+        Draw "Game over" across the screen.
+        """
+        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
+        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
+
+        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
+        arcade.draw_text(f"Time taken: {time_taken_formatted}",
+                         SCREEN_WIDTH/2,
+                         200,
+                         arcade.color.GRAY,
+                         font_size=15,
+                         anchor_x="center")
+
+        output_total = f"Total Score: {self.window.total_score}"
+        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view = GameView()
+        self.window.show_view(game_view)
+
 
 # Scrolling Background Constants
 SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
@@ -18,6 +50,10 @@ BULLET_SPEED = 5
 SPRITE_SCALING = 0.5
 MUSIC_VOLUME = 0.1
 window = None
+
+# Game state
+GAME_OVER = 1
+PLAY_GAME = 0
 
 class GameView(arcade.View):
 
@@ -31,8 +67,8 @@ class GameView(arcade.View):
         arcade.set_background_color(arcade.color.ARSENIC)
 
         self.frame_count = 0
+        self.time_taken = 0
 
-        # Variables that will hold sprite lists
         self.player_list = None
         self.pbullet_list = None
         self.enemy_list = None
@@ -44,31 +80,24 @@ class GameView(arcade.View):
         self.score = 0
         self.score_text = None
 
-        # Track the current state of what key is pressed
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
         self.down_pressed = False
         self.z_pressed = False
 
-        # Variables used to manage our music. See setup() for giving them
-        # values.
         self.music_list = []
         self.current_song = 0
         self.music = None
+        self.gun_sound = arcade.sound.load_sound(":resources:sounds/laser1.wav")
+        self.hit_sound = arcade.sound.load_sound(":resources:sounds/phaseJump1.wav")
 
-        # Pre-load the animation frames of explosions. We don't do this in the __init__
-        # of the explosion sprite because it
-        # takes too long and would cause the game to pause.
         self.explosion_texture_list = []
-
         columns = 16
         count = 60
         sprite_width = 256
         sprite_height = 256
         file_name = ":resources:images/spritesheets/explosion.png"
-
-        # Load the explosions from a sprite sheet
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
 
     def play_song(self):
@@ -132,6 +161,8 @@ class GameView(arcade.View):
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
+        output_total = f"Total Score: {self.window.total_score}"
+        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
 
     def update(self, delta_time):
 
@@ -145,28 +176,29 @@ class GameView(arcade.View):
         self.ebullet_list.update()
         self.player_list.update()
 
+        if arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list):
+            game_over_view = GameOverView()
+            game_over_view.time_taken = self.time_taken
+            self.window.set_mouse_visible(True)
+            self.window.show_view(game_over_view)
+
         hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list)
 
-        # Loop through each colliding sprite, remove it
         for ebullet in hit_list:
             ebullet.kill()
 
         if len(hit_list) > 0:
             ebullet.remove_from_sprite_lists()
-
             explosion = Explosion(self.explosion_texture_list)
             explosion.center_x = hit_list[0].center_x
             explosion.center_y = hit_list[0].center_y
             explosion.update()
             self.explosions_list.append(explosion)
 
-        # Trigger Game Over
-
         if len(self.player_list) == 0:
             game_over_view = modules.gameover.GameOverView
             game_over_view.time_taken = self.time_taken
             self.window.show_view(game_over_view)
-
 
         # Code specific to background music
         position = self.music.get_stream_position()
@@ -263,6 +295,7 @@ class GameView(arcade.View):
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
                 self.score += 1000
+                self.window.total_score += 1
 
                 # Hit Sound
                 arcade.play_sound(self.hit_sound)
@@ -331,6 +364,7 @@ def main():
     start_view = modules.views.MenuView()
     game_view = GameView()
     window.show_view(start_view)
+    window.total_score = 0
     arcade.run()
 
 
