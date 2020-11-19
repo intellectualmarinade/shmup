@@ -2,47 +2,17 @@ import arcade
 import time
 import os
 import math
+import shelve
 import modules.gameover
 import modules.audio
 import modules.views
+import modules.gameover
 import modules.infinite_bg as background
 from modules.explosion import Explosion
 from modules.player import Player
 
-class GameOverView(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.time_taken = 0
-
-    def on_show(self):
-        arcade.set_background_color(arcade.color.BLACK)
-
-    def on_draw(self):
-        arcade.start_render()
-        """
-        Draw "Game over" across the screen.
-        """
-        arcade.draw_text("Game Over", 240, 400, arcade.color.WHITE, 54)
-        arcade.draw_text("Click to restart", 310, 300, arcade.color.WHITE, 24)
-
-        time_taken_formatted = f"{round(self.time_taken, 2)} seconds"
-        arcade.draw_text(f"Time taken: {time_taken_formatted}",
-                         SCREEN_WIDTH/2,
-                         200,
-                         arcade.color.GRAY,
-                         font_size=15,
-                         anchor_x="center")
-
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
-
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = GameView()
-        self.window.show_view(game_view)
-
-
 # Scrolling Background Constants
-SCREEN_TITLE = "Operation Pew Pew Boom - Level 2"
+SCREEN_TITLE = "Operation Pew Pew Boom"
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 MOVEMENT_SPEED = 5
@@ -55,6 +25,7 @@ window = None
 GAME_OVER = 1
 PLAY_GAME = 0
 
+
 class GameView(arcade.View):
 
     def __init__(self):
@@ -66,6 +37,8 @@ class GameView(arcade.View):
 
         arcade.set_background_color(arcade.color.ARSENIC)
 
+        background.MyGame.setup(self)
+
         self.frame_count = 0
         self.time_taken = 0
 
@@ -74,6 +47,7 @@ class GameView(arcade.View):
         self.enemy_list = None
         self.ebullet_list = None
         self.player = None
+        self.explosions_list = None
 
         # Set up the player info
         self.player_sprite = None
@@ -161,8 +135,9 @@ class GameView(arcade.View):
 
         output = f"Current Score: {self.score}"
         arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
-        output_total = f"Total Score: {self.window.total_score}"
-        arcade.draw_text(output_total, 10, 10, arcade.color.WHITE, 14)
+
+        output = f"Leaderboard Rank: {self.score}"
+        arcade.draw_text(output, 10, 770, arcade.color.WHITE, 14)
 
     def update(self, delta_time):
 
@@ -177,10 +152,10 @@ class GameView(arcade.View):
         self.player_list.update()
 
         if arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list):
-            game_over_view = GameOverView()
-            game_over_view.time_taken = self.time_taken
+            game_over_view = modules.gameover.GameOverView()
             self.window.set_mouse_visible(True)
             self.window.show_view(game_over_view)
+
 
         hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list)
 
@@ -202,24 +177,14 @@ class GameView(arcade.View):
 
         # Code specific to background music
         position = self.music.get_stream_position()
-
-        # The position pointer is reset to 0 right after we finish the song.
-        # This makes it very difficult to figure out if we just started playing
-        # or if we are doing playing.
         if position == 0.0:
             self.advance_song()
             self.play_song()
 
         # Code specific for Enemy Aim
-        # Loop through each enemy that we have
         for enemy in self.enemy_list:
 
-            # First, calculate the angle to the player. We could do this
-            # only when the bullet fires, but in this case we will rotate
-            # the enemy to face the player each frame, so we'll do this
-            # each frame.
-
-            # Position the start at the enemy's current location
+            # Rotate the enemy at current location to face the player each frame
             start_x = enemy.center_x
             start_y = enemy.center_y
 
@@ -227,9 +192,7 @@ class GameView(arcade.View):
             dest_x = self.player_sprite.center_x
             dest_y = self.player_sprite.center_y
 
-            # Do math to calculate how to get the bullet to the destination.
-            # Calculation the angle in radians between the start points
-            # and end points. This is the angle the bullet will travel.
+            # This is the angle the bullet will travel.
             x_diff = dest_x - start_x
             y_diff = dest_y - start_y
             angle = math.atan2(y_diff, x_diff)
@@ -295,7 +258,7 @@ class GameView(arcade.View):
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
                 self.score += 1000
-                self.window.total_score += 1
+                self.window.total_score += 1000
 
                 # Hit Sound
                 arcade.play_sound(self.hit_sound)
@@ -325,7 +288,7 @@ class GameView(arcade.View):
         if key == arcade.key.Z:
             self.z_pressed = True
             # Gunshot sound
-            arcade.play_sound(self.gun_sound, volume = 0.1)
+            arcade.play_sound(self.gun_sound, volume=0.1)
             # Create a bullet
             pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
 
