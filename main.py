@@ -97,19 +97,6 @@ class GameView(arcade.View):
         self.player_list.append(self.player_sprite)
         self.score = 0
 
-        # Add top-right big-enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy01.png", 1.0)
-        enemy.center_x = 440
-        enemy.center_y = SCREEN_HEIGHT - enemy.height
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        # Add top-right big-enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy01.png", 1.0)
-        enemy.center_x = 230
-        enemy.center_y = SCREEN_HEIGHT - enemy.height
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
 
         # Add mid-mid enemy ship
         enemy = arcade.Sprite("./Assets/sprites/container/enemy02.png", 1.0)
@@ -122,27 +109,6 @@ class GameView(arcade.View):
         enemy = arcade.Sprite("./Assets/sprites/container/enemy02.png", 1.0)
         enemy.center_x = 200
         enemy.center_y = 400
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy03.png", 1.0)
-        enemy.center_x = 50
-        enemy.center_y = 500
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy03.png", 1.0)
-        enemy.center_x = 500
-        enemy.center_y = 500
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy03.png", 1.0)
-        enemy.center_x = 250
-        enemy.center_y = 100
         enemy.angle = 180
         self.enemy_list.append(enemy)
 
