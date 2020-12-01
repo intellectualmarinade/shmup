@@ -91,7 +91,7 @@ class MyGame(arcade.Window):
         self.enemy_textures.append(texture)
 
         # Create rows and columns of enemies
-        x_count = random.randrange(1, 3)
+        x_count = random.randrange(1, 4)
         x_start = random.choice([-100,700])
         x_spacing = random.randrange(100,300)
         y_count = 1
@@ -275,7 +275,7 @@ class MyGame(arcade.Window):
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 30 == 0:
+            if self.frame_count % 60 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/yellow_cannon.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y

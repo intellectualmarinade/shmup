@@ -91,11 +91,11 @@ class MyGame(arcade.Window):
         self.enemy_textures.append(texture)
 
         # Create rows and columns of enemies
-        x_count = random.randrange(1,4)
+        x_count = 1
         x_start = random.choice([-100,700])
-        x_spacing = random.randrange(100,300)
-        y_count = 2
-        y_start = random.choice([500, 550])
+        x_spacing = random.randrange(100,250)
+        y_count = random.randrange(1,3)
+        y_start = random.choice([500, 700])
         y_spacing = 100
         for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
             for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
@@ -275,7 +275,7 @@ class MyGame(arcade.Window):
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 24 == 0:
+            if self.frame_count % 20 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
