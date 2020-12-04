@@ -21,7 +21,7 @@ MOVEMENT_SPEED = 8
 MAX_PLAYER_BULLETS = 4
 MAX_ENEMY_BULLETS = 2
 
-MUSIC_VOLUME = 0.7
+MUSIC_VOLUME = 0.4
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -30,7 +30,7 @@ RIGHT_ENEMY_BORDER = SCREEN_WIDTH - ENEMY_VERTICAL_MARGIN
 LEFT_ENEMY_BORDER = ENEMY_VERTICAL_MARGIN
 
 # How many pixels to move the enemy down when reversing
-ENEMY_MOVE_DOWN_AMOUNT = 5
+ENEMY_MOVE_DOWN_AMOUNT = 10
 
 # Game state
 GAME_OVER = 1
@@ -275,7 +275,7 @@ class MyGame(arcade.Window):
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 20 == 0:
+            if self.frame_count % 24 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y

@@ -7,7 +7,8 @@ import modules.infinite_bg as background
 from modules.explosion import Explosion
 
 SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_ENEMY = 1.5
+SPRITE_SCALING_ENEMY = 2.5
+SPRITE_SCALING_ENEMY2LASER = 2.5
 SPRITE_SCALING_LASER = 1
 
 SCREEN_WIDTH = 600
@@ -21,7 +22,7 @@ MOVEMENT_SPEED = 8
 MAX_PLAYER_BULLETS = 3
 MAX_ENEMY_BULLETS = 2
 
-MUSIC_VOLUME = 0.7
+MUSIC_VOLUME = 0.4
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -275,8 +276,8 @@ class MyGame(arcade.Window):
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 60 == 0:
-                bullet = arcade.Sprite("Assets/sprites/container/yellow_cannon.png")
+            if self.frame_count % 45 == 0:
+                bullet = arcade.Sprite("Assets/sprites/container/yellow_cannon.png", 2.0)
                 bullet.center_x = start_x
                 bullet.center_y = start_y
                 bullet.angle = math.degrees(angle)

@@ -1,6 +1,7 @@
 import arcade
 import random
 import time
+import enemy
 import modules.infinite_bg as background
 from modules.explosion import Explosion
 
@@ -79,34 +80,9 @@ class MyGame(arcade.Window):
         file_name = ":resources:images/spritesheets/explosion.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
 
-    def setup_level_one(self):
-        # Load the textures for the enemies, one facing left, one right
-        self.enemy_textures = []
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png", mirrored=True)
-        self.enemy_textures.append(texture)
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png")
-        self.enemy_textures.append(texture)
-
-        # Create rows and columns of enemies
-        x_count = random.randrange(1,4)
-        x_start = random.randrange(0,600)
-        x_spacing = random.randrange(100,200)
-        y_count = random.randrange(1,2)
-        y_start = 800
-        y_spacing = random.randrange(1,50)
-        for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
-            for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
-
-                enemy = arcade.Sprite()
-                enemy.scale = SPRITE_SCALING_ENEMY
-                enemy.texture = self.enemy_textures[1]
-
-                # Position the enemy
-                enemy.center_x = x
-                enemy.center_y = y
-
-                # Add the enemy to the lists
-                self.enemy_list.append(enemy)
+    enemy.move_enemy_one
+    enemy.move_enemy_two
+    enemy.move_enemy_three
 
     def play_song(self):
         """ Play the song. """
@@ -145,7 +121,9 @@ class MyGame(arcade.Window):
         self.current_song = 0
         self.play_song()
 
-        self.setup_level_one()
+        enemy.move_enemy_one(self)
+        enemy.move_enemy_two(self)
+        enemy.move_enemy_three(self)
 
     def on_draw(self):
         arcade.start_render()
@@ -369,7 +347,9 @@ class MyGame(arcade.Window):
         self.player_list.update()
 
         if len(self.enemy_list) == 0:
-            self.setup_level_one()
+            enemy.move_enemy_one(self)
+            enemy.move_enemy_two(self)
+            enemy.move_enemy_three(self)
 
 
 def main():
