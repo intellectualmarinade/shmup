@@ -19,7 +19,7 @@ MOVEMENT_SPEED = 8
 MAX_PLAYER_BULLETS = 4
 MAX_ENEMY_BULLETS = 6
 
-MUSIC_VOLUME = 0.4
+MUSIC_VOLUME = 0.1
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -82,15 +82,15 @@ class MyGame(arcade.Window):
     def setup_level_one(self):
         # Load the textures for the enemies, one facing left, one right
         self.enemy_textures = []
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png", mirrored=True)
+        texture = arcade.load_texture("./Assets/sprites/container/enemy01.png", mirrored=True)
         self.enemy_textures.append(texture)
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png")
+        texture = arcade.load_texture("./Assets/sprites/container/enemy01.png")
         self.enemy_textures.append(texture)
 
         # Create rows and columns of enemies
-        x_count = random.randrange(1,4)
+        x_count = random.randrange(2,10)
         x_start = random.randrange(0,600)
-        x_spacing = random.randrange(100,200)
+        x_spacing = 50
         y_count = random.randrange(1,2)
         y_start = 800
         y_spacing = random.randrange(1,50)
