@@ -20,9 +20,9 @@ ENEMY_SPEED = 1
 MOVEMENT_SPEED = 8
 
 MAX_PLAYER_BULLETS = 3
-MAX_ENEMY_BULLETS = 2
+MAX_ENEMY_BULLETS = 3
 
-MUSIC_VOLUME = 0.4
+MUSIC_VOLUME = 0.1
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
