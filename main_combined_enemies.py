@@ -277,7 +277,7 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 24= 0:
+            if self.MyGame.frame_count % 24 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
