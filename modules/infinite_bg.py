@@ -6,7 +6,7 @@ SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
-SCROLL_SPEED = 0.5
+SCROLL_SPEED = 0.25
 
 class MyGame(arcade.Window):
     def __init__(self, width, height):

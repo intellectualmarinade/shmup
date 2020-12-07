@@ -11,11 +11,11 @@ SCREEN_TITLE = "Operation Pew Pew Boom"
 BULLET_SPEED = 8
 ENEMY_SPEED = 4
 ENEMY_SPEED2 = 1
+ENEMY_SPEED3 = 0.5
 MOVEMENT_SPEED = 8
 
-MAX_PLAYER_BULLETS = 3
-MAX_ENEMY_BULLETS = 8
-
+MAX_PLAYER_BULLETS = 2
+MAX_ENEMY_BULLETS = 6
 
 MUSIC_VOLUME = 0.1
 
@@ -194,10 +194,10 @@ class Enemy2group:
 
         # Create rows and columns of enemies
         x_count = random.randrange(2, 4)
-        x_start = random.randrange(0, 600)
+        x_start = random.randrange(200, 400)
         x_spacing = random.randrange(50, 200)
         y_count = random.randrange(1, 3)
-        y_start = 800
+        y_start = random.randrange(600, 750)
         y_spacing = random.randrange(50, 80)
         for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
             for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
@@ -277,13 +277,13 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 24 == 0:
+            if self.MyGame.frame_count % 45 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
                 bullet.angle = math.degrees(angle)
-                bullet.change_x = math.cos(angle) * BULLET_SPEED
-                bullet.change_y = math.sin(angle) * BULLET_SPEED
+                bullet.change_x = math.cos(angle) * 5
+                bullet.change_y = math.sin(angle) * 4
 
                 self.enemy_bullet_list.append(bullet)
 
@@ -313,36 +313,36 @@ class Enemy2group:
             self.startenemy2()
 
 
-class Enemy2group:
+class Enemy3group:
     def __init__(self, MyGame):
         self.enemy_list = arcade.SpriteList()
         self.enemy_bullet_list = arcade.SpriteList()
         self.enemy_textures = arcade.SpriteList()
-        self.enemy_change_x = -ENEMY_SPEED2
-        self.enemy_change_y = -ENEMY_SPEED2
+        self.enemy_change_x = -ENEMY_SPEED3
+        self.enemy_change_y = -ENEMY_SPEED3
         self.MyGame = MyGame
         self.frame_count = 0
-        self.startenemy2()
+        self.startenemy3()
 
-    def startenemy2(self):
+    def startenemy3(self):
         # Load the textures for the enemies, one facing left, one right
         self.enemy_textures = []
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png", mirrored=True)
+        texture = arcade.load_texture("./Assets/sprites/container/enemy03.png", mirrored=True)
         self.enemy_textures.append(texture)
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png")
+        texture = arcade.load_texture("./Assets/sprites/container/enemy03.png")
         self.enemy_textures.append(texture)
 
         # Create rows and columns of enemies
-        x_count = random.randrange(2, 4)
+        x_count = random.randrange(1, 3)
         x_start = random.randrange(0, 600)
-        x_spacing = random.randrange(50, 200)
+        x_spacing = random.randrange(100, 300)
         y_count = random.randrange(1, 3)
         y_start = 800
-        y_spacing = random.randrange(50, 80)
+        y_spacing = random.randrange(100, 250)
         for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
             for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
                 enemy = arcade.Sprite()
-                enemy.scale = 1.4
+                enemy.scale = 2.0
                 enemy.texture = self.enemy_textures[0]
 
                 # Position the enemy
@@ -417,13 +417,13 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 30 == 0:
-                bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
+            if self.MyGame.frame_count % 240 == 0:
+                bullet = arcade.Sprite("Assets/sprites/container/yellow_cannon.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
                 bullet.angle = math.degrees(angle)
-                bullet.change_x = math.cos(angle) * BULLET_SPEED
-                bullet.change_y = math.sin(angle) * BULLET_SPEED
+                bullet.change_x = math.cos(angle) * 12
+                bullet.change_y = math.sin(angle) * 15
 
                 self.enemy_bullet_list.append(bullet)
 
@@ -450,7 +450,7 @@ class Enemy2group:
         self.MyGame.frame_count += 1
 
         if len(self.enemy_list) == 0:
-            self.startenemy2()
+            self.startenemy3()
 
 
 class MyGame(arcade.Window):
@@ -473,6 +473,7 @@ class MyGame(arcade.Window):
 
         # Populate enemies
         self.enemy1group = None
+        self.enemy2group = None
         self.enemy2group = None
 
         # Load sounds. Sounds from kenney.nl
@@ -505,10 +506,11 @@ class MyGame(arcade.Window):
         self.explosions_list = arcade.SpriteList()
         self.enemy1group = Enemy1group(self)
         self.enemy2group = Enemy2group(self)
+        self.enemy3group = Enemy3group(self)
 
         # Set up the player
         self.score = 0
-        self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.08)
+        self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.07)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
@@ -526,6 +528,7 @@ class MyGame(arcade.Window):
         self.explosions_list.draw()
         self.enemy1group.on_draw()
         self.enemy2group.on_draw()
+        self.enemy3group.on_draw()
 
         arcade.draw_text(f'Leaderboard Rank: NULL', 20, 765, arcade.color.WHITE, 14)
         arcade.draw_text(f"Score: {self.score}", 20, 745, arcade.color.WHITE, 14)
@@ -588,6 +591,7 @@ class MyGame(arcade.Window):
             # Check this bullet to see if it hit a enemy
             hit_list = arcade.check_for_collision_with_list(bullet, self.enemy1group.enemy_list)
             hit_list2 = arcade.check_for_collision_with_list(bullet, self.enemy2group.enemy_list)
+            hit_list3 = arcade.check_for_collision_with_list(bullet, self.enemy3group.enemy_list)
 
             # If it did, get rid of the bullet
             if len(hit_list) > 0:
@@ -606,6 +610,14 @@ class MyGame(arcade.Window):
                 explosion.update()
                 self.explosions_list.append(explosion)
 
+            if len(hit_list3) > 0:
+                bullet.remove_from_sprite_lists()
+                explosion = Explosion(self.explosion_texture_list)
+                explosion.center_x = hit_list3[0].center_x
+                explosion.center_y = hit_list3[0].center_y
+                explosion.update()
+                self.explosions_list.append(explosion)
+
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
                 self.score += 100
@@ -615,6 +627,12 @@ class MyGame(arcade.Window):
             for enemy in hit_list2:
                 enemy.remove_from_sprite_lists()
                 self.score += 400
+                arcade.play_sound(self.hit_sound)
+                print("Boom")
+
+            for enemy in hit_list3:
+                enemy.remove_from_sprite_lists()
+                self.score += 1000
                 arcade.play_sound(self.hit_sound)
                 print("Boom")
 
@@ -645,6 +663,12 @@ class MyGame(arcade.Window):
         self.enemy2group.allow_enemies_to_fire()
         self.enemy2group.process_enemy_bullets()
 
+        self.enemy3group.enemy_list.on_update()
+        self.enemy3group.enemy_bullet_list.on_update()
+        self.enemy3group.update_enemies()
+        self.enemy3group.allow_enemies_to_fire()
+        self.enemy3group.process_enemy_bullets()
+
         if self.game_state == GAME_OVER:
             return
 
@@ -665,9 +689,10 @@ class MyGame(arcade.Window):
 
         if len(self.enemy1group.enemy_list) == 0:
             self.enemy1group.startenemy1()
-
         if len(self.enemy2group.enemy_list) == 0:
             self.enemy2group.startenemy2()
+        if len(self.enemy3group.enemy_list) == 0:
+            self.enemy3group.startenemy3()
 
 
 def main():
