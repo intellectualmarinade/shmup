@@ -169,11 +169,12 @@ class MyGame(arcade.Window):
         # Set the background color
         arcade.set_background_color(arcade.color.BLACK)
 
-        self.music_list = ["./Assets/Music/peritune-rapid4.mp3"]
+        self.music_list = ["./Assets/Music/mmpm.mp3"]
         self.current_song = 0
         self.play_song()
 
         self.setup_level_one()
+
 
     def on_draw(self):
         arcade.start_render()
@@ -295,7 +296,7 @@ class MyGame(arcade.Window):
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 24 == 0:
+            if self.frame_count % 30 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y

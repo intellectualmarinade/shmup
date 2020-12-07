@@ -1,6 +1,7 @@
 import arcade
 import random
 import math
+import time
 import modules.infinite_bg as background
 from modules.explosion import Explosion
 
@@ -17,7 +18,7 @@ MOVEMENT_SPEED = 8
 MAX_PLAYER_BULLETS = 2
 MAX_ENEMY_BULLETS = 6
 
-MUSIC_VOLUME = 0.1
+MUSIC_VOLUME = 0.5
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -550,6 +551,10 @@ class MyGame(arcade.Window):
         self.enemy2group = Enemy2group(self)
         self.enemy3group = Enemy3group(self)
 
+        self.music_list = ["./Assets/Music/mmpm.mp3"]
+        self.current_song = 0
+        self.play_song()
+
         # Set up the player
         self.score = 0
         self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.06)
@@ -559,6 +564,18 @@ class MyGame(arcade.Window):
 
         # Set the background color
         arcade.set_background_color(arcade.color.BLACK)
+
+    def play_song(self):
+        """ Play the song. """
+        # Stop what is currently playing.
+        if self.music:
+            self.music.stop()
+
+        # Play the next song
+        print(f"Playing {self.music_list[self.current_song]}")
+        self.music = arcade.Sound(self.music_list[self.current_song], streaming=True)
+        self.music.play(MUSIC_VOLUME)
+        time.sleep(0.03)
 
     def on_draw(self):
         arcade.start_render()
