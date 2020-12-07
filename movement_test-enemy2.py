@@ -85,9 +85,7 @@ class MyGame(arcade.Window):
     def setup_level_one(self):
         # Load the textures for the enemies, one facing left, one right
         self.enemy_textures = []
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png", mirrored=True)
-        self.enemy_textures.append(texture)
-        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png")
+        texture = arcade.load_texture("./Assets/sprites/container/enemy01.png")
         self.enemy_textures.append(texture)
 
         # Create rows and columns of enemies
@@ -100,16 +98,43 @@ class MyGame(arcade.Window):
         for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
             for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
 
-                enemy = arcade.Sprite()
-                enemy.scale = SPRITE_SCALING_ENEMY
-                enemy.texture = self.enemy_textures[1]
+                enemy1 = arcade.Sprite()
+                enemy1.scale = SPRITE_SCALING_ENEMY
+                enemy1.texture = self.enemy_textures[0]
 
                 # Position the enemy
-                enemy.center_x = x
-                enemy.center_y = y
+                enemy1.center_x = x
+                enemy1.center_y = y
 
                 # Add the enemy to the lists
-                self.enemy_list.append(enemy)
+                self.enemy_list.append(enemy1)
+
+    def setup_level_two(self):
+        # Load the textures for the enemies, one facing left, one right
+        self.enemy_textures = []
+        texture = arcade.load_texture("./Assets/sprites/container/enemy02.png")
+        self.enemy_textures.append(texture2)
+
+        # Create rows and columns of enemies
+        x_count = random.randrange(1,3)
+        x_start = random.choice([-100,700])
+        x_spacing = random.randrange(100,250)
+        y_count = random.randrange(1,3)
+        y_start = random.choice([500, 700])
+        y_spacing = 100
+        for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
+            for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
+
+                enemy2 = arcade.Sprite()
+                enemy2.scale = SPRITE_SCALING_ENEMY
+                enemy2.texture = self.enemy_textures[1]
+
+                # Position the enemy
+                enemy2.center_x = x
+                enemy2.center_y = y
+
+                # Add the enemy to the lists
+                self.enemy_list.append(enemy2)
 
     def play_song(self):
         """ Play the song. """
@@ -245,11 +270,6 @@ class MyGame(arcade.Window):
             for enemy in self.enemy_list:
                 # Move enemy down
                 enemy.center_y -= ENEMY_MOVE_DOWN_AMOUNT
-                # Flip texture on enemy so it faces the other way
-                if self.enemy_change_x > 0:
-                    enemy.texture = self.enemy_textures[0]
-                else:
-                    enemy.texture = self.enemy_textures[1]
 
         if enemy.top < 0:
              enemy.remove_from_sprite_lists()

@@ -7,7 +7,6 @@ from modules.explosion import Explosion
 SPRITE_SCALING_PLAYER = 0.5
 SPRITE_SCALING_ENEMY = 0.8
 SPRITE_SCALING_LASER = 0.8
-SPRITE_SCALING_ENEMYLASER = 2.2
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Operation Pew Pew Boom"
@@ -34,6 +33,144 @@ ENEMY_MOVE_DOWN_AMOUNT = 5
 GAME_OVER = 1
 PLAY_GAME = 0
 
+
+class Enemy1group:
+
+    def __init__(self, MyGame):
+        self.enemy_list = arcade.SpriteList()
+        self.enemy_bullet_list = arcade.SpriteList()
+        self.enemy_textures = arcade.SpriteList()
+        self.enemy1_change_x = -ENEMY_SPEED
+        self.enemy1_change_y = -ENEMY_SPEED
+        self.MyGame = MyGame
+        self.startenemy1()
+
+        print("Enemy1 init started")
+
+    def startenemy1(self):
+        # Load the textures for the enemies
+        self.enemy_textures = []
+        texture1 = arcade.load_texture("./Assets/sprites/container/enemy01.png")
+        self.enemy_textures.append(texture1)
+
+        # Create rows and columns of enemies
+        x_count = random.randrange(2, 10)
+        x_start = random.randrange(0, 600)
+        x_spacing = 50
+        y_count = random.randrange(1, 2)
+        y_start = 800
+        y_spacing = random.randrange(1, 50)
+        for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
+            for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
+                enemy1 = arcade.Sprite()
+                enemy1.scale = 1
+                enemy1.texture = self.enemy_textures[0]
+
+                # Position the enemy
+                enemy1.center_x = x
+                enemy1.center_y = y
+
+                # Add the enemy to the lists
+                self.enemy_list.append(enemy1)
+                print("Enemy1 appended to list")
+
+    def setup(self):
+        self.enemy_list = arcade.SpriteList()
+        self.enemy_bullet_list = arcade.SpriteList()
+        print("Enemy1 setup started")
+
+    def on_draw(self):
+        self.enemy_list.draw()
+        self.enemy_bullet_list.draw()
+        print("Enemy1 drawing")
+
+    def update_enemies(self):
+        # Move the enemy vertically
+        for enemy1 in self.enemy_list:
+            enemy1.center_x += self.enemy1_change_x
+        for enemy1 in self.enemy_list:
+            enemy1.center_y += self.enemy1_change_y
+
+        # Check every enemy to see if any hit the edge. If so, reverse the
+        # direction and flag to move down.
+        move_down = False
+        for enemy1 in self.enemy_list:
+            if enemy1.right > RIGHT_ENEMY_BORDER and self.enemy1_change_x > 0:
+                self.enemy1_change_x *= -1
+                move_down = True
+            if enemy1.left < LEFT_ENEMY_BORDER and self.enemy1_change_x < 0:
+                self.enemy1_change_x *= -1
+                move_down = True
+
+        # Did we hit the edge above, and need to move the enemy down?
+        if move_down:
+            # Yes
+            for enemy1 in self.enemy_list:
+                # Move enemy down
+                enemy1.center_y -= ENEMY_MOVE_DOWN_AMOUNT
+
+        if enemy1.top < 0:
+            enemy1.remove_from_sprite_lists()
+
+        print("enemy1 on the move")
+
+    def allow_enemies_to_fire(self):
+        """
+        See if any enemies will fire this frame.
+        """
+        # Track which x values have had a chance to fire a bullet.
+        # Since enemy list is build from the bottom up, we can use
+        # this to only allow the bottom row to fire.
+        x_spawn = []
+        for enemy1 in self.enemy_list:
+            # Adjust the chance depending on the number of enemies. Fewer
+            # enemies, more likely to fire.
+            chance = 4 + len(self.enemy_list) * 4
+
+            # Fire if we roll a zero, and no one else in this column has had
+            # a chance to fire.
+            if len(self.enemy_bullet_list) < MAX_ENEMY_BULLETS:
+                if random.randrange(chance) == 0 and enemy1.center_x not in x_spawn:
+                    # Create a bullet
+                    bullet = arcade.Sprite("./Assets/sprites/container/purp_bullet.png", 2.2)
+
+                    # bullet attributes
+                    bullet.angle = 180
+                    bullet.change_y = -BULLET_SPEED
+                    bullet.center_x = enemy1.center_x
+                    bullet.top = enemy1.bottom
+
+                    # Add the bullet to the appropriate list
+                    self.enemy_bullet_list.append(bullet)
+
+            # Ok, this column has had a chance to fire. Add to list so we don't
+            # try it again this frame.
+            x_spawn.append(enemy1.center_x)
+
+    def process_enemy_bullets(self):
+
+        # Move the bullets
+        self.enemy_bullet_list.update()
+
+        # Loop through each bullet
+        for bullet in self.enemy_bullet_list:
+            arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
+
+            # See if the player got hit with a bullet
+            if arcade.check_for_collision_with_list(self.MyGame.player_sprite, self.enemy_bullet_list):
+                self.game_state = GAME_OVER
+
+            # If the bullet falls off the screen get rid of it
+            if bullet.top < 0:
+                bullet.remove_from_sprite_lists()
+
+    def on_update(self, delta_time):
+        """ Movement and game logic """
+
+        if len(self.enemy_list) == 0:
+            self.startenemy1()
+            print("Started")
+
 class MyGame(arcade.Window):
     """ Main application class. """
 
@@ -41,21 +178,18 @@ class MyGame(arcade.Window):
         """ Initializer """
         # Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        print("MyGame class Started")
 
         # Variables that will hold sprite lists
         self.player_list = None
-        self.enemy_list = None
         self.player_bullet_list = None
-        self.enemy_bullet_list = None
-        self.enemy_textures = None
         self.game_state = PLAY_GAME
         self.player_sprite = None
         self.score = 0
         self.explosions_list = None
 
-        # Enemy movement
-        self.enemy_change_x = -ENEMY_SPEED
-        self.enemy_change_y = -ENEMY_SPEED
+        # Populate enemies
+        self.enemy1group = None
 
         # Load sounds. Sounds from kenney.nl
         self.gun_sound = arcade.load_sound(":resources:sounds/hurt5.wav")
@@ -79,60 +213,16 @@ class MyGame(arcade.Window):
         file_name = ":resources:images/spritesheets/explosion.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
 
-    def setup_level_one(self):
-        # Load the textures for the enemies, one facing left, one right
-        self.enemy_textures = []
-        texture = arcade.load_texture("./Assets/sprites/container/enemy01.png", mirrored=True)
-        self.enemy_textures.append(texture)
-        texture = arcade.load_texture("./Assets/sprites/container/enemy01.png")
-        self.enemy_textures.append(texture)
-
-        # Create rows and columns of enemies
-        x_count = random.randrange(2,10)
-        x_start = random.randrange(0,600)
-        x_spacing = 50
-        y_count = random.randrange(1,2)
-        y_start = 800
-        y_spacing = random.randrange(1,50)
-        for x in range(x_start, x_spacing * x_count + x_start, x_spacing):
-            for y in range(y_start, y_spacing * y_count + y_start, y_spacing):
-
-                enemy = arcade.Sprite()
-                enemy.scale = SPRITE_SCALING_ENEMY
-                enemy.texture = self.enemy_textures[1]
-
-                # Position the enemy
-                enemy.center_x = x
-                enemy.center_y = y
-
-                # Add the enemy to the lists
-                self.enemy_list.append(enemy)
-
-    def play_song(self):
-        """ Play the song. """
-        # Stop what is currently playing.
-        if self.music:
-            self.music.stop()
-
-        # Play the next song
-        print(f"Playing {self.music_list[self.current_song]}")
-        self.music = arcade.Sound(self.music_list[self.current_song], streaming=True)
-        self.music.play(MUSIC_VOLUME)
-        time.sleep(0.03)
-
     def setup(self):
         background.MyGame.setup(self)
         self.game_state = PLAY_GAME
         self.player_list = arcade.SpriteList()
-        self.enemy_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
-        self.enemy_bullet_list = arcade.SpriteList()
         self.explosions_list = arcade.SpriteList()
+        self.enemy1group = Enemy1group(self)
 
         # Set up the player
         self.score = 0
-
-        # Image from kenney.nl
         self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.08)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
@@ -141,22 +231,16 @@ class MyGame(arcade.Window):
         # Set the background color
         arcade.set_background_color(arcade.color.BLACK)
 
-        self.music_list = ["./Assets/Music/peritune-rapid4.mp3"]
-        self.current_song = 0
-        self.play_song()
-
-        self.setup_level_one()
-
     def on_draw(self):
         arcade.start_render()
         background.MyGame.on_draw(self)
 
         # Draw all the sprites.
-        self.enemy_list.draw()
         self.player_bullet_list.draw()
-        self.enemy_bullet_list.draw()
         self.player_list.draw()
         self.explosions_list.draw()
+        self.enemy1group.on_draw()
+
 
         arcade.draw_text(f'Leaderboard Rank: NULL', 20, 765, arcade.color.WHITE, 14)
         arcade.draw_text(f"Score: {self.score}", 20, 745, arcade.color.WHITE, 14)
@@ -219,92 +303,6 @@ class MyGame(arcade.Window):
         if key == arcade.key.Z:
             self.z_pressed = False
 
-    def update_enemies(self):
-
-        # Move the enemy vertically
-        for enemy in self.enemy_list:
-            enemy.center_x += self.enemy_change_x
-
-        for enemy in self.enemy_list:
-            enemy.center_y += self.enemy_change_y
-
-        # Check every enemy to see if any hit the edge. If so, reverse the
-        # direction and flag to move down.
-        move_down = False
-        for enemy in self.enemy_list:
-            if enemy.right > RIGHT_ENEMY_BORDER and self.enemy_change_x > 0:
-                self.enemy_change_x *= -1
-                move_down = True
-            if enemy.left < LEFT_ENEMY_BORDER and self.enemy_change_x < 0:
-                self.enemy_change_x *= -1
-                move_down = True
-
-        # Did we hit the edge above, and need to move the enemy down?
-        if move_down:
-            # Yes
-            for enemy in self.enemy_list:
-                # Move enemy down
-                enemy.center_y -= ENEMY_MOVE_DOWN_AMOUNT
-                # Flip texture on enemy so it faces the other way
-                if self.enemy_change_x > 0:
-                    enemy.texture = self.enemy_textures[0]
-                else:
-                    enemy.texture = self.enemy_textures[1]
-
-        if enemy.top < 0:
-             enemy.remove_from_sprite_lists()
-
-    def allow_enemies_to_fire(self):
-        """
-        See if any enemies will fire this frame.
-        """
-        # Track which x values have had a chance to fire a bullet.
-        # Since enemy list is build from the bottom up, we can use
-        # this to only allow the bottom row to fire.
-        x_spawn = []
-        for enemy in self.enemy_list:
-            # Adjust the chance depending on the number of enemies. Fewer
-            # enemies, more likely to fire.
-            chance = 4 + len(self.enemy_list) * 4
-
-            # Fire if we roll a zero, and no one else in this column has had
-            # a chance to fire.
-            if len(self.enemy_bullet_list) < MAX_ENEMY_BULLETS:
-                if random.randrange(chance) == 0 and enemy.center_x not in x_spawn:
-                # Create a bullet
-                    bullet = arcade.Sprite("./Assets/sprites/container/purp_bullet.png", SPRITE_SCALING_ENEMYLASER)
-
-                # bullet attributes
-                    bullet.angle = 180
-                    bullet.change_y = -BULLET_SPEED
-                    bullet.center_x = enemy.center_x
-                    bullet.top = enemy.bottom
-
-                # Add the bullet to the appropriate list
-                    self.enemy_bullet_list.append(bullet)
-
-            # Ok, this column has had a chance to fire. Add to list so we don't
-            # try it again this frame.
-            x_spawn.append(enemy.center_x)
-
-    def process_enemy_bullets(self):
-
-        # Move the bullets
-        self.enemy_bullet_list.update()
-
-        # Loop through each bullet
-        for bullet in self.enemy_bullet_list:
-            hit_list = arcade.check_for_collision_with_list(bullet, self.player_list)
-
-            # See if the player got hit with a bullet
-            if arcade.check_for_collision_with_list(self.player_sprite, self.enemy_bullet_list):
-
-                self.game_state = GAME_OVER
-
-            # If the bullet falls off the screen get rid of it
-            if bullet.top < 0:
-                bullet.remove_from_sprite_lists()
-
     def process_player_bullets(self):
 
         # Move the bullets
@@ -343,14 +341,14 @@ class MyGame(arcade.Window):
         background.MyGame.update(self, delta_time)
         self.background_list.update()
         self.explosions_list.update()
+        self.enemy1group.enemy_list.on_update()
+        self.enemy1group.enemy_bullet_list.on_update()
+        self.enemy1group.update_enemies()
+        self.enemy1group.allow_enemies_to_fire()
+        self.enemy1group.process_enemy_bullets()
 
         if self.game_state == GAME_OVER:
             return
-
-        self.update_enemies()
-        self.allow_enemies_to_fire()
-        self.process_enemy_bullets()
-        self.process_player_bullets()
 
         # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
@@ -366,9 +364,6 @@ class MyGame(arcade.Window):
             self.player_sprite.change_x = MOVEMENT_SPEED
 
         self.player_list.update()
-
-        if len(self.enemy_list) == 0:
-            self.setup_level_one()
 
 
 def main():
