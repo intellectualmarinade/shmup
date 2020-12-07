@@ -37,12 +37,12 @@ PLAY_GAME = 0
 class Enemy1group:
 
     def __init__(self):
-        self.enemy_list = None
-        self.enemy_bullet_list = None
+        self.enemy_list = arcade.SpriteList()
+        self.enemy_bullet_list = arcade.SpriteList()
         self.startenemy1()
+        print("Enemy1 Started")
 
     def startenemy1(self):
-
         # Load the textures for the enemies
         self.enemy_textures = []
         texture1 = arcade.load_texture("./Assets/sprites/container/enemy01.png")
@@ -162,6 +162,7 @@ class Enemy1group:
 
         if len(self.enemy_list) == 0:
             self.startenemy1()
+            print("Started")
 
 class MyGame(arcade.Window):
     """ Main application class. """
@@ -170,6 +171,7 @@ class MyGame(arcade.Window):
         """ Initializer """
         # Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        print("MyGame class Started")
 
         # Variables that will hold sprite lists
         self.player_list = None
@@ -210,7 +212,7 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
         self.explosions_list = arcade.SpriteList()
-        self.Enemy1group = self.enemy1group
+        self.enemy1group = Enemy1group()
 
         # Set up the player
         self.score = 0
@@ -230,6 +232,8 @@ class MyGame(arcade.Window):
         self.player_bullet_list.draw()
         self.player_list.draw()
         self.explosions_list.draw()
+        self.enemy1group.on_draw()
+
 
         arcade.draw_text(f'Leaderboard Rank: NULL', 20, 765, arcade.color.WHITE, 14)
         arcade.draw_text(f"Score: {self.score}", 20, 745, arcade.color.WHITE, 14)
