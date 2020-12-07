@@ -161,6 +161,20 @@ class Enemy1group:
             if arcade.check_for_collision_with_list(self.MyGame.player_sprite, self.enemy_bullet_list):
                 self.MyGame.game_state = GAME_OVER
 
+            # Check this bullet to see if it hit the player
+            hit_list = arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
+
+            # If it did, get rid of the bullet
+            if len(hit_list) > 0:
+                self.MyGame.player_sprite.remove_from_sprite_lists()
+                explosion = Explosion(self.MyGame.explosion_texture_list)
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+                explosion.update()
+                self.MyGame.explosions_list.append(explosion)
+                arcade.play_sound(self.MyGame.hit_sound)
+                print("You went Boom")
+
             # If the bullet falls off the screen get rid of it
             if bullet.top < 0:
                 bullet.remove_from_sprite_lists()
@@ -277,13 +291,13 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 45 == 0:
+            if self.MyGame.frame_count % 24 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
                 bullet.angle = math.degrees(angle)
-                bullet.change_x = math.cos(angle) * 5
-                bullet.change_y = math.sin(angle) * 4
+                bullet.change_x = math.cos(angle) * 8
+                bullet.change_y = math.sin(angle) * 5
 
                 self.enemy_bullet_list.append(bullet)
 
@@ -299,6 +313,20 @@ class Enemy2group:
             # See if the player got hit with a bullet
             if arcade.check_for_collision_with_list(self.MyGame.player_sprite, self.enemy_bullet_list):
                 self.MyGame.game_state = GAME_OVER
+
+            # Check this bullet to see if it hit a enemy
+            hit_list = arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
+
+            # You exploded
+            if len(hit_list) > 0:
+                self.MyGame.player_sprite.remove_from_sprite_lists()
+                explosion = Explosion(self.MyGame.explosion_texture_list)
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+                explosion.update()
+                self.MyGame.explosions_list.append(explosion)
+                arcade.play_sound(self.MyGame.hit_sound)
+                print("You went Boom")
 
             # If the bullet falls off the screen get rid of it
             if bullet.top < 0:
@@ -440,6 +468,20 @@ class Enemy3group:
             if arcade.check_for_collision_with_list(self.MyGame.player_sprite, self.enemy_bullet_list):
                 self.MyGame.game_state = GAME_OVER
 
+                # Check this bullet to see if it hit a enemy
+                hit_list = arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
+
+                # You exploded
+                if len(hit_list) > 0:
+                    self.MyGame.player_sprite.remove_from_sprite_lists()
+                    explosion = Explosion(self.MyGame.explosion_texture_list)
+                    explosion.center_x = hit_list[0].center_x
+                    explosion.center_y = hit_list[0].center_y
+                    explosion.update()
+                    self.MyGame.explosions_list.append(explosion)
+                    arcade.play_sound(self.MyGame.hit_sound)
+                    print("You went Boom")
+
             # If the bullet falls off the screen get rid of it
             if bullet.top < 0:
                 bullet.remove_from_sprite_lists()
@@ -510,7 +552,7 @@ class MyGame(arcade.Window):
 
         # Set up the player
         self.score = 0
-        self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.07)
+        self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.06)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
