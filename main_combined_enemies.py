@@ -6,7 +6,7 @@ from modules.explosion import Explosion
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-SCREEN_TITLE = "Operation Pew Pew Boom"
+SCREEN_TITLE = "Operation Pew Pew Boom: Not for Distribution"
 
 BULLET_SPEED = 8
 ENEMY_SPEED = 4
