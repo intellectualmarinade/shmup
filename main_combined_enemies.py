@@ -1,7 +1,6 @@
 import arcade
 import random
 import math
-import time
 import modules.infinite_bg as background
 from modules.explosion import Explosion
 
@@ -18,7 +17,7 @@ MAX_PLAYER_BULLETS = 3
 MAX_ENEMY_BULLETS = 8
 
 
-MUSIC_VOLUME = 0.2
+MUSIC_VOLUME = 0.1
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -418,7 +417,7 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 24 == 0:
+            if self.MyGame.frame_count % 30 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
@@ -478,7 +477,7 @@ class MyGame(arcade.Window):
 
         # Load sounds. Sounds from kenney.nl
         self.gun_sound = arcade.load_sound(":resources:sounds/hurt5.wav")
-        self.hit_sound = arcade.load_sound("./Assets/sounds/rumble.wav")
+        self.hit_sound = arcade.load_sound(":resources:sounds/hit5.wav")
         self.music = None
 
         arcade.set_background_color(arcade.color.BLACK)
@@ -491,13 +490,12 @@ class MyGame(arcade.Window):
         self.z_pressed = False
 
         self.explosion_texture_list = []
-        columns = 8
-        count = 64
+        columns = 16
+        count = 60
         sprite_width = 256
         sprite_height = 256
-        file_name = "./Assets/sprites/container/Tile.png"
+        file_name = ":resources:images/spritesheets/explosion.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
-
 
     def setup(self):
         background.MyGame.setup(self)
@@ -514,10 +512,6 @@ class MyGame(arcade.Window):
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
-
-        #self.music_list = ["./Assets/Music/peritune-rapid4.mp3"]
-        #self.current_song = 0
-        #self.play_song()
 
         # Set the background color
         arcade.set_background_color(arcade.color.BLACK)
@@ -538,8 +532,7 @@ class MyGame(arcade.Window):
 
         # Draw game over if the game state is such
         if self.game_state == GAME_OVER:
-            arcade.draw_text(f"MISSION FAILED", 76, 400, arcade.color.WHITE, 55)
-            arcade.draw_text(f"FINAL SCORE:{self.score}", 200, 375, arcade.color.WHITE, 25)
+            arcade.draw_text(f"MISSION FAILED", 80, 400, arcade.color.WHITE, 55)
 
     def on_key_press(self, key, modifiers):
 
@@ -604,7 +597,6 @@ class MyGame(arcade.Window):
                 explosion.center_y = hit_list[0].center_y
                 explosion.update()
                 self.explosions_list.append(explosion)
-                print("Boom")
 
             if len(hit_list2) > 0:
                 bullet.remove_from_sprite_lists()
@@ -613,16 +605,15 @@ class MyGame(arcade.Window):
                 explosion.center_y = hit_list2[0].center_y
                 explosion.update()
                 self.explosions_list.append(explosion)
-                print("Boom")
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
-                self.score += 100
-                arcade.play_sound(self.hit_sound)
-
+                self.score += 1000
             for enemy in hit_list2:
                 enemy.remove_from_sprite_lists()
-                self.score += 400
+                self.score += 1000
+
+                # Hit Sound
                 arcade.play_sound(self.hit_sound)
 
             # If the bullet flies off-screen, remove it.
