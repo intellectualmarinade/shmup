@@ -477,7 +477,7 @@ class MyGame(arcade.Window):
 
         # Load sounds. Sounds from kenney.nl
         self.gun_sound = arcade.load_sound(":resources:sounds/hurt5.wav")
-        self.hit_sound = arcade.load_sound(":resources:sounds/hit5.wav")
+        self.hit_sound = arcade.load_sound("./Assets/sounds/rumble.wav")
         self.music = None
 
         arcade.set_background_color(arcade.color.BLACK)
@@ -490,11 +490,11 @@ class MyGame(arcade.Window):
         self.z_pressed = False
 
         self.explosion_texture_list = []
-        columns = 16
-        count = 60
+        columns = 8
+        count = 64
         sprite_width = 256
         sprite_height = 256
-        file_name = ":resources:images/spritesheets/explosion.png"
+        file_name = "./Assets/sprites/container/Tile.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
 
     def setup(self):
@@ -608,13 +608,15 @@ class MyGame(arcade.Window):
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
-                self.score += 1000
+                self.score += 100
+                arcade.play_sound(self.hit_sound)
+                print("Boom")
+
             for enemy in hit_list2:
                 enemy.remove_from_sprite_lists()
-                self.score += 1000
-
-                # Hit Sound
+                self.score += 400
                 arcade.play_sound(self.hit_sound)
+                print("Boom")
 
             # If the bullet flies off-screen, remove it.
             if bullet.bottom > SCREEN_HEIGHT:
