@@ -18,7 +18,7 @@ MOVEMENT_SPEED = 8
 MAX_PLAYER_BULLETS = 2
 MAX_ENEMY_BULLETS = 6
 
-MUSIC_VOLUME = 0.5
+MUSIC_VOLUME = 0.4
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -292,7 +292,7 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 24 == 0:
+            if self.MyGame.frame_count % 45 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
