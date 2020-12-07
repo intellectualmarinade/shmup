@@ -29,11 +29,11 @@ class GameView(arcade.View):
         # takes too long and would cause the game to pause.
         self.explosion_texture_list = []
 
-        columns = 16
-        count = 60
+        columns = 8
+        count = 64
         sprite_width = 256
         sprite_height = 256
-        file_name = ":resources:images/spritesheets/explosion.png"
+        file_name = "./Assets/sprites.container/Tile.png"
 
         # Load the explosions from a sprite sheet
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
