@@ -417,7 +417,7 @@ class Enemy2group:
             enemy.angle = math.degrees(angle) - 90
 
             # Shoot every 60 frames change of shooting each frame
-            if self.MyGame.frame_count % 30 == 0:
+            if self.MyGame.frame_count % 24 == 0:
                 bullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
                 bullet.center_x = start_x
                 bullet.center_y = start_y
@@ -490,11 +490,11 @@ class MyGame(arcade.Window):
         self.z_pressed = False
 
         self.explosion_texture_list = []
-        columns = 16
-        count = 60
+        columns = 8
+        count = 64
         sprite_width = 256
         sprite_height = 256
-        file_name = ":resources:images/spritesheets/explosion.png"
+        file_name = "./Assets/sprites/container/Tile.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
 
     def setup(self):
@@ -597,6 +597,7 @@ class MyGame(arcade.Window):
                 explosion.center_y = hit_list[0].center_y
                 explosion.update()
                 self.explosions_list.append(explosion)
+                print("Boom")
 
             if len(hit_list2) > 0:
                 bullet.remove_from_sprite_lists()
@@ -605,13 +606,14 @@ class MyGame(arcade.Window):
                 explosion.center_y = hit_list2[0].center_y
                 explosion.update()
                 self.explosions_list.append(explosion)
+                print("Boom")
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
-                self.score += 1000
+                self.score += 100
             for enemy in hit_list2:
                 enemy.remove_from_sprite_lists()
-                self.score += 1000
+                self.score += 400
 
                 # Hit Sound
                 arcade.play_sound(self.hit_sound)
