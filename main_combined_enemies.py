@@ -2,23 +2,26 @@ import arcade
 import random
 import math
 import time
+import shelve
 import modules.infinite_bg as background
 from modules.explosion import Explosion
+
+scoreFile = shelve.open('score.txt')
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Operation Pew Pew Boom: Not for Distribution"
 
 BULLET_SPEED = 8
-ENEMY_SPEED = 4
-ENEMY_SPEED2 = 1
+ENEMY_SPEED = 5
+ENEMY_SPEED2 = 2
 ENEMY_SPEED3 = 0.5
 MOVEMENT_SPEED = 8
 
 MAX_PLAYER_BULLETS = 2
 MAX_ENEMY_BULLETS = 6
 
-MUSIC_VOLUME = 0.4
+MUSIC_VOLUME = 0.35
 
 # This margin controls how close the enemy gets to the left or right side
 # before reversing direction.
@@ -32,6 +35,23 @@ ENEMY_MOVE_DOWN_AMOUNT = 5
 # Game state
 GAME_OVER = 1
 PLAY_GAME = 0
+
+
+def updateScore(newScore):
+    if ('score' in scoreFile):
+        score = scoreFile['score']
+        if (newScore not in score):
+            score.insert(0, newScore)
+
+        score.sort()
+        ranking = score.index(newScore)
+        ranking = len(score) - ranking
+    else:
+        score = [newScore]
+        ranking = 1
+
+    scoreFile['score'] = score
+    return ranking
 
 
 class Enemy1group:
@@ -577,6 +597,9 @@ class MyGame(arcade.Window):
         self.music.play(MUSIC_VOLUME)
         time.sleep(0.03)
 
+
+
+
     def on_draw(self):
         arcade.start_render()
         background.MyGame.on_draw(self)
@@ -594,7 +617,13 @@ class MyGame(arcade.Window):
 
         # Draw game over if the game state is such
         if self.game_state == GAME_OVER:
+
+            newScore = self.score
+            updateScore(self.score)
+
             arcade.draw_text(f"MISSION FAILED", 80, 400, arcade.color.WHITE, 55)
+            arcade.draw_text(f"Your rank is #", 80, 400, arcade.color.WHITE, 55)
+
 
     def on_key_press(self, key, modifiers):
 
@@ -679,7 +708,7 @@ class MyGame(arcade.Window):
 
             for enemy in hit_list:
                 enemy.remove_from_sprite_lists()
-                self.score += 100
+                self.score += 150
                 arcade.play_sound(self.hit_sound)
                 print("Boom")
 

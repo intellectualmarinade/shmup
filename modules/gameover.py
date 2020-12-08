@@ -1,6 +1,6 @@
 import arcade
 import main as gameview
-import modules.scores
+import modules.high_score
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800

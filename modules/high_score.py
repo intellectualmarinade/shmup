@@ -15,5 +15,10 @@ def updateScore(newScore):
     score = [newScore]
     ranking = 1
 
+  print(score)
+  print(ranking)
   scoreFile['score'] = score
   return ranking
+
+newScore = int(input("New HighScore: \n"))
+updateScore(newScore)
