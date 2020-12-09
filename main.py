@@ -164,7 +164,6 @@ class GameView(arcade.View):
 
         if len(self.player_list) == 0:
             game_over_view = modules.gameover.GameOverView
-            game_over_view.time_taken = self.time_taken
             self.window.show_view(game_over_view)
 
         # Code specific to background music

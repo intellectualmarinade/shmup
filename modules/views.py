@@ -1,5 +1,5 @@
 import arcade
-import main as gameview
+import main_merging as gameview
 import arcade.gui
 from arcade.gui import UIManager
 import modules.menu
@@ -104,6 +104,6 @@ class InstructionView(arcade.View):
                                 SCREEN_WIDTH, SCREEN_HEIGHT)
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
-        game_view = gameview.GameView()
+        game_view = gameview.MyGame()
         game_view.setup()
         self.window.show_view(game_view)
