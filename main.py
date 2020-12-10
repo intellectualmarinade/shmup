@@ -1,53 +1,83 @@
 import arcade
-import time
-import os
+import random
 import math
-import modules.gameover
-import modules.audio
-import modules.views
-import modules.gameover
+import time
+import timeit
 import modules.infinite_bg as background
 from modules.explosion import Explosion
-from modules.player import Player
+from modules.enemy import Enemy1group
+from modules.enemy import Enemy2group
+from modules.enemy import Enemy3group
 
-# Scrolling Background Constants
-SCREEN_TITLE = "Operation Pew Pew Boom"
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
-MOVEMENT_SPEED = 5
-BULLET_SPEED = 5
-SPRITE_SCALING = 0.5
-MUSIC_VOLUME = 0.5
-window = None
+SCREEN_TITLE = "Operation Pew Pew Boom: Not for Distribution"
+
+BULLET_SPEED = 8
+ENEMY_SPEED = 5
+ENEMY_SPEED2 = 2
+ENEMY_SPEED3 = 0.5
+MOVEMENT_SPEED = 8
+
+MAX_PLAYER_BULLETS = 2
+MAX_ENEMY_BULLETS = 6
+
+MUSIC_VOLUME = 0.2
+
+# This margin controls how close the enemy gets to the left or right side
+# before reversing direction.
+ENEMY_VERTICAL_MARGIN = 15
+RIGHT_ENEMY_BORDER = SCREEN_WIDTH - ENEMY_VERTICAL_MARGIN
+LEFT_ENEMY_BORDER = ENEMY_VERTICAL_MARGIN
+
+# How many pixels to move the enemy down when reversing
+ENEMY_MOVE_DOWN_AMOUNT = 5
 
 # Game state
-GAME_OVER = 1
-PLAY_GAME = 0
+# These numbers represent "states" that the game can be in.
+INSTRUCTIONS_PAGE_0 = 0
+INSTRUCTIONS_PAGE_1 = 1
+GAME_RUNNING = 2
+GAME_OVER = 3
 
-class GameView(arcade.View):
+class MyGame(arcade.Window):
+    """ Main application class. """
 
     def __init__(self):
-
-        super().__init__()
-
-        file_path = os.path.dirname(os.path.abspath(__file__))
-        os.chdir(file_path)
-
-        arcade.set_background_color(arcade.color.ARSENIC)
-
-        background.MyGame.setup(self)
+        """ Initializer """
+        # Call the parent class initializer
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
         self.frame_count = 0
-        self.time_taken = 0
+        print("MyGame class Started")
+
+        # Variables that will hold sprite lists
         self.player_list = None
-        self.pbullet_list = None
-        self.enemy_list = None
-        self.ebullet_list = None
-        self.player = None
-        self.explosions_list = None
+        self.player_bullet_list = None
         self.player_sprite = None
         self.score = 0
-        self.score_text = None
+        self.explosions_list = None
+
+        # Start 'state' will be showing the first page of instructions.
+        self.current_state = INSTRUCTIONS_PAGE_0
+
+        # Variables used to calculate frames per second
+        self.frame_count = 0
+        self.fps_start_timer = None
+        self.fps = None
+
+        # Populate enemies
+        self.enemy1group = None
+        self.enemy2group = None
+        self.enemy2group = None
+
+        # Load sounds. Sounds from kenney.nl
+        self.gun_sound = arcade.load_sound(":resources:sounds/hurt5.wav")
+        self.hit_sound = arcade.load_sound("./Assets/sounds/rumble.wav")
+        self.music = None
+
+        arcade.set_background_color(arcade.color.BLACK)
+        background.MyGame.setup(self)
 
         self.left_pressed = False
         self.right_pressed = False
@@ -55,19 +85,77 @@ class GameView(arcade.View):
         self.down_pressed = False
         self.z_pressed = False
 
-        self.music_list = []
-        self.current_song = 0
-        self.music = None
-        self.gun_sound = arcade.sound.load_sound(":resources:sounds/laser1.wav")
-        self.hit_sound = arcade.sound.load_sound(":resources:sounds/phaseJump1.wav")
-
         self.explosion_texture_list = []
-        columns = 16
-        count = 60
+        columns = 8
+        count = 64
         sprite_width = 256
         sprite_height = 256
-        file_name = ":resources:images/spritesheets/explosion.png"
+        file_name = "./Assets/sprites/container/Tile.png"
         self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
+
+        # STEP 1: Put each instruction page in an image. Make sure the image
+        # matches the dimensions of the window, or it will stretch and look
+        # ugly. You can also do something similar if you want a page between
+        # each level.
+        self.instructions = []
+        texture = arcade.load_texture("./Assets/title.png")
+        self.instructions.append(texture)
+
+        texture = arcade.load_texture("./Assets/intro.png")
+        self.instructions.append(texture)
+
+    def setup(self):
+        background.MyGame.setup(self)
+        self.player_list = arcade.SpriteList()
+        self.player_bullet_list = arcade.SpriteList()
+        self.explosions_list = arcade.SpriteList()
+        self.enemy1group = Enemy1group(self)
+        self.enemy2group = Enemy2group(self)
+        self.enemy3group = Enemy3group(self)
+
+        self.set_mouse_visible(False)
+
+        self.music_list = ["./Assets/Music/peritune-rapid4.mp3"]
+        self.current_song = 0
+        self.play_song()
+
+        # Set up the player
+        self.score = 0
+        self.player_sprite = arcade.Sprite("./Assets/sprites/container/playership.png", 0.06)
+        self.player_sprite.center_x = 300
+        self.player_sprite.center_y = 100
+        self.player_list.append(self.player_sprite)
+
+    def draw_instructions_page(self, page_number):
+        """
+        Draw an instruction page. Load the page as an image.
+        """
+        page_texture = self.instructions[page_number]
+        arcade.draw_texture_rectangle(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2,
+                                      page_texture.width,
+                                      page_texture.height, page_texture, 0)
+
+    def draw_game_over(self):
+        """
+        Draw "Game over" across the screen.
+        """
+        start_x = 300
+        start_y = 500
+        arcade.draw_text("Mission Failed",
+                         start_x, start_y, arcade.color.WHITE, 54, width=500, align="center",
+                         anchor_x="center", anchor_y="center")
+
+        start_x = 300
+        start_y = 450
+        arcade.draw_text(f"Your Final Score: {self.score}",
+                         start_x, start_y, arcade.color.WHITE, 24, width=500, align="center",
+                         anchor_x="center", anchor_y="center")
+
+        start_x = 300
+        start_y = 20
+        arcade.draw_text("CLICK TO RESTART GAME",
+                         start_x, start_y, arcade.color.WHITE, 14, width=500, align="center",
+                         anchor_x="center", anchor_y="center")
 
     def play_song(self):
         """ Play the song. """
@@ -81,180 +169,73 @@ class GameView(arcade.View):
         self.music.play(MUSIC_VOLUME)
         time.sleep(0.03)
 
-    def setup(self):
+    def draw_game(self):
+        background.MyGame.on_draw(self)
 
-        background.MyGame.setup(self)
-        self.player_list = arcade.SpriteList()
-        self.pbullet_list = arcade.SpriteList()
-        self.enemy_list = arcade.SpriteList()
-        self.ebullet_list = arcade.SpriteList()
-        self.explosions_list = arcade.SpriteList()
+        # Draw all the sprites.
+        self.player_bullet_list.draw()
+        self.player_list.draw()
+        self.explosions_list.draw()
+        self.enemy1group.on_draw()
+        self.enemy2group.on_draw()
+        self.enemy3group.on_draw()
 
-        # Add player ship
-        self.player_sprite = Player("./Assets/sprites/container/playership.png", 0.08)
-        self.player_sprite.center_x = 50
-        self.player_sprite.center_y = 50
-        self.player_list.append(self.player_sprite)
-        self.score = 0
+        # --- Calculate FPS
 
+        fps_calculation_freq = 60
+        # Once every 60 frames, calculate our FPS
+        if self.frame_count % fps_calculation_freq == 0:
+            # Do we have a start time?
+            if self.fps_start_timer is not None:
+                # Calculate FPS
+                total_time = timeit.default_timer() - self.fps_start_timer
+                self.fps = fps_calculation_freq / total_time
+            # Reset the timer
+            self.fps_start_timer = timeit.default_timer()
 
-        # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy02.png", 1.0)
-        enemy.center_x = 300
-        enemy.center_y = 400
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
+        if self.fps is not None:
+            output = f"FPS: {self.fps:.0f}"
+            arcade.draw_text(output, 20, 745, arcade.color.WHITE, 14)
 
-        # Add mid-mid enemy ship
-        enemy = arcade.Sprite("./Assets/sprites/container/enemy02.png", 1.0)
-        enemy.center_x = 200
-        enemy.center_y = 400
-        enemy.angle = 180
-        self.enemy_list.append(enemy)
-
-        self.music_list = ["./Assets/Music/peritune-rapid4.mp3"]
-        self.current_song = 0
-        self.play_song()
+        arcade.draw_text(f"Current Score: {self.score}", 20, 765, arcade.color.WHITE, 14)
 
     def on_draw(self):
+        """
+        Render the screen.
+        """
 
+        # This command has to happen before we start drawing
         arcade.start_render()
-        background.MyGame.on_draw(self)
-        self.player_list.draw()
-        self.pbullet_list.draw()
-        self.enemy_list.draw()
-        self.ebullet_list.draw()
-        self.explosions_list.draw()
 
-        output = f"Current Score: {self.score}"
-        arcade.draw_text(output, 10, 750, arcade.color.WHITE, 14)
+        if self.current_state == INSTRUCTIONS_PAGE_0:
+            self.draw_instructions_page(0)
 
-        output = f"Leaderboard Rank: YOU DA BESTEST"
-        arcade.draw_text(output, 10, 770, arcade.color.WHITE, 14)
+        elif self.current_state == INSTRUCTIONS_PAGE_1:
+            self.draw_instructions_page(1)
 
-    def update(self, delta_time):
+        elif self.current_state == GAME_RUNNING:
+            self.draw_game()
 
-        background.MyGame.update(self, delta_time)
-        self.background_list.update()
+        else:
+            self.draw_game_over()
 
-    def on_update(self, delta_time):
+    def on_mouse_press(self, x, y, button, modifiers):
+        """
+        Called when the user presses a mouse button.
+        """
 
-        self.frame_count += 1
-        self.explosions_list.update()
-        self.ebullet_list.update()
-        self.player_list.update()
-
-        if arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list):
-            game_over_view = modules.gameover.GameOverView()
-            self.window.set_mouse_visible(True)
-            self.window.show_view(game_over_view)
-
-        hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.ebullet_list)
-
-        for ebullet in hit_list:
-            ebullet.kill()
-
-        if len(hit_list) > 0:
-            ebullet.remove_from_sprite_lists()
-            explosion = Explosion(self.explosion_texture_list)
-            explosion.center_x = hit_list[0].center_x
-            explosion.center_y = hit_list[0].center_y
-            explosion.update()
-            self.explosions_list.append(explosion)
-
-        if len(self.player_list) == 0:
-            game_over_view = modules.gameover.GameOverView
-            self.window.show_view(game_over_view)
-
-        # Code specific to background music
-        position = self.music.get_stream_position()
-        if position == 0.0:
-            self.advance_song()
-            self.play_song()
-
-        # Code specific for Enemy Aim
-        for enemy in self.enemy_list:
-
-            # Rotate the enemy at current location to face the player each frame
-            start_x = enemy.center_x
-            start_y = enemy.center_y
-
-            # Get the destination location for the bullet
-            dest_x = self.player_sprite.center_x
-            dest_y = self.player_sprite.center_y
-
-            # This is the angle the bullet will travel.
-            x_diff = dest_x - start_x
-            y_diff = dest_y - start_y
-            angle = math.atan2(y_diff, x_diff)
-
-            # Set the enemy to face the player.
-            enemy.angle = math.degrees(angle) - 90
-
-            # Shoot every 60 frames change of shooting each frame
-            if self.frame_count % 60 == 0:
-                ebullet = arcade.Sprite("Assets/sprites/container/laserRed01.png")
-                ebullet.center_x = start_x
-                ebullet.center_y = start_y
-                ebullet.angle = math.degrees(angle)
-                ebullet.change_x = math.cos(angle) * BULLET_SPEED
-                ebullet.change_y = math.sin(angle) * BULLET_SPEED
-
-                self.ebullet_list.append(ebullet)
-
-        # Get rid of the bullet when it flies off-screen
-        for ebullet in self.ebullet_list:
-            if ebullet.top < 0:
-                ebullet.remove_from_sprite_lists()
-
-        self.ebullet_list.update()
-
-        self.player_sprite.change_x = 0
-        self.player_sprite.change_y = 0
-
-        if self.up_pressed and not self.down_pressed:
-            self.player_sprite.change_y = MOVEMENT_SPEED
-        elif self.down_pressed and not self.up_pressed:
-            self.player_sprite.change_y = -MOVEMENT_SPEED
-        if self.left_pressed and not self.right_pressed:
-            self.player_sprite.change_x = -MOVEMENT_SPEED
-        elif self.right_pressed and not self.left_pressed:
-            self.player_sprite.change_x = MOVEMENT_SPEED
-
-        self.player_list.update()
-
-        for pbullet in self.pbullet_list:
-
-            # Check this bullet to see if it hit an enemy (collision detection)
-            hit_list = arcade.check_for_collision_with_list(pbullet, self.enemy_list)
-
-            # If it did, then remove the bullet
-            if len(hit_list) > 0:
-                pbullet.remove_from_sprite_lists()
-                # Make an explosion
-                explosion = Explosion(self.explosion_texture_list)
-                explosion.center_x = hit_list[0].center_x
-                explosion.center_y = hit_list[0].center_y
-                explosion.update()
-                self.explosions_list.append(explosion)
-
-            for enemy in hit_list:
-                enemy.remove_from_sprite_lists()
-                self.score += 1000
-                self.window.total_score += 1000
-
-                arcade.play_sound(self.hit_sound)
-
-            # If the bullet flies off-screen, remove it.
-            if pbullet.bottom > SCREEN_HEIGHT:
-                pbullet.remove_from_sprite_lists()
-
-            # Get rid of the bullet when it flies off-screen
-            for pbullet in self.pbullet_list:
-                if pbullet.top < 0:
-                    pbullet.remove_from_sprite_lists()
-
-            self.pbullet_list.update()
+        # Change states as needed.
+        if self.current_state == INSTRUCTIONS_PAGE_0:
+            # Next page of instructions.
+            self.current_state = INSTRUCTIONS_PAGE_1
+        elif self.current_state == INSTRUCTIONS_PAGE_1:
+            # Start the game
+            self.setup()
+            self.current_state = GAME_RUNNING
+        elif self.current_state == GAME_OVER:
+            # Restart the game.
+            self.setup()
+            self.current_state = GAME_RUNNING
 
     def on_key_press(self, key, modifiers):
 
@@ -269,13 +250,18 @@ class GameView(arcade.View):
 
         if key == arcade.key.Z:
             self.z_pressed = True
-            arcade.play_sound(self.gun_sound, volume=0.1)
-            pbullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png")
-            pbullet.angle = 90
-            pbullet.change_y = BULLET_SPEED
-            pbullet.center_x = self.player_sprite.center_x
-            pbullet.bottom = self.player_sprite.top
-            self.pbullet_list.append(pbullet)
+            print("Pew")
+
+            # Only allow the user so many bullets on screen at a time to prevent
+            # them from spamming bullets.
+            if len(self.player_bullet_list) < MAX_PLAYER_BULLETS:
+                arcade.play_sound(self.gun_sound, 0.2)
+                bullet = arcade.Sprite(":resources:images/space_shooter/laserBlue01.png", 1.0)
+                bullet.angle = 90
+                bullet.change_y = BULLET_SPEED
+                bullet.center_x = self.player_sprite.center_x
+                bullet.bottom = self.player_sprite.top
+                self.player_bullet_list.append(bullet)
 
     def on_key_release(self, key, modifiers):
 
@@ -291,14 +277,139 @@ class GameView(arcade.View):
         if key == arcade.key.Z:
             self.z_pressed = False
 
+    def process_player_bullets(self):
+
+        # Move the bullets
+        self.player_bullet_list.update()
+
+        # Loop through each bullet
+        for bullet in self.player_bullet_list:
+
+            # Check this bullet to see if it hit a enemy
+            hit_list = arcade.check_for_collision_with_list(bullet, self.enemy1group.enemy_list)
+            hit_list2 = arcade.check_for_collision_with_list(bullet, self.enemy2group.enemy_list)
+            hit_list3 = arcade.check_for_collision_with_list(bullet, self.enemy3group.enemy_list)
+
+            # If it did, get rid of the bullet
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+                explosion = Explosion(self.explosion_texture_list)
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+                explosion.update()
+                self.explosions_list.append(explosion)
+
+            if len(hit_list2) > 0:
+                bullet.remove_from_sprite_lists()
+                explosion = Explosion(self.explosion_texture_list)
+                explosion.center_x = hit_list2[0].center_x
+                explosion.center_y = hit_list2[0].center_y
+                explosion.update()
+                self.explosions_list.append(explosion)
+
+            if len(hit_list3) > 0:
+                bullet.remove_from_sprite_lists()
+                explosion = Explosion(self.explosion_texture_list)
+                explosion.center_x = hit_list3[0].center_x
+                explosion.center_y = hit_list3[0].center_y
+                explosion.update()
+                self.explosions_list.append(explosion)
+
+            for enemy in hit_list:
+                enemy.remove_from_sprite_lists()
+                self.score += 150
+                arcade.play_sound(self.hit_sound, 0.4)
+                print("Boom")
+
+            for enemy in hit_list2:
+                enemy.remove_from_sprite_lists()
+                self.score += 400
+                arcade.play_sound(self.hit_sound, 0.4)
+                print("Boom")
+
+            for enemy in hit_list3:
+                enemy.remove_from_sprite_lists()
+                self.score += 1000
+                arcade.play_sound(self.hit_sound, 0.4)
+                print("Boom")
+
+            # If the bullet flies off-screen, remove it.
+            if bullet.bottom > SCREEN_HEIGHT:
+                bullet.remove_from_sprite_lists()
+
+    def on_update(self, delta_time):
+        """ Movement and game logic """
+
+        self.frame_count += 1
+        self.explosions_list.update()
+
+        if self.current_state == GAME_RUNNING:
+            background.MyGame.update(self, delta_time)
+            self.background_list.update()
+            self.player_bullet_list.update()
+            self.process_player_bullets()
+
+            self.enemy1group.enemy_list.on_update()
+            self.enemy1group.enemy_bullet_list.on_update()
+            self.enemy1group.update_enemies()
+            self.enemy1group.allow_enemies_to_fire()
+            self.enemy1group.process_enemy_bullets()
+
+            self.enemy2group.enemy_list.on_update()
+            self.enemy2group.enemy_bullet_list.on_update()
+            self.enemy2group.update_enemies()
+            self.enemy2group.allow_enemies_to_fire()
+            self.enemy2group.process_enemy_bullets()
+
+            self.enemy3group.enemy_list.on_update()
+            self.enemy3group.enemy_bullet_list.on_update()
+            self.enemy3group.update_enemies()
+            self.enemy3group.allow_enemies_to_fire()
+            self.enemy3group.process_enemy_bullets()
+
+            # Calculate speed based on the keys pressed
+            self.player_sprite.change_x = 0
+            self.player_sprite.change_y = 0
+
+            if self.up_pressed and not self.down_pressed:
+                self.player_sprite.change_y = MOVEMENT_SPEED
+            elif self.down_pressed and not self.up_pressed:
+                self.player_sprite.change_y = -MOVEMENT_SPEED
+            if self.left_pressed and not self.right_pressed:
+                self.player_sprite.change_x = -MOVEMENT_SPEED
+            elif self.right_pressed and not self.left_pressed:
+                self.player_sprite.change_x = MOVEMENT_SPEED
+
+            self.player_list.update()
+
+            if len(self.enemy1group.enemy_list) == 0:
+                self.enemy1group.startenemy1()
+            if len(self.enemy2group.enemy_list) == 0:
+                self.enemy2group.startenemy2()
+            if len(self.enemy3group.enemy_list) == 0:
+                self.enemy3group.startenemy3()
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        """
+        Called when the user presses a mouse button.
+        """
+
+        # Change states as needed.
+        if self.current_state == INSTRUCTIONS_PAGE_0:
+            # Next page of instructions.
+            self.current_state = INSTRUCTIONS_PAGE_1
+        elif self.current_state == INSTRUCTIONS_PAGE_1:
+            # Start the game
+            self.setup()
+            self.current_state = GAME_RUNNING
+        elif self.current_state == GAME_OVER:
+            # Restart the game.
+            self.setup()
+            self.current_state = GAME_RUNNING
 
 def main():
-
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    start_view = modules.views.MenuView()
-    game_view = GameView()
-    window.show_view(start_view)
-    window.total_score = 0
+    window = MyGame()
+    window.setup()
     arcade.run()
 
 

@@ -2,7 +2,7 @@ import shelve
 
 scoreFile = shelve.open('score.txt')
 
-def updateScore(self, newScore):
+def updateScore(newScore):
   if('score' in scoreFile):
     score = scoreFile['score']
     if(newScore not in score):
@@ -20,5 +20,5 @@ def updateScore(self, newScore):
   scoreFile['score'] = score
   return ranking
 
-newScore = score
+newScore = int(input("New HighScore: \n"))
 updateScore(newScore)

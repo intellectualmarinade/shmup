@@ -319,19 +319,19 @@ class Enemy2group:
 
             if arcade.check_for_collision_with_list(self.MyGame.player_sprite, self.enemy_bullet_list):
 
-            # Check this bullet to see if it hit a enemy
-            hit_list = arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
+                # Check this bullet to see if it hit a enemy
+                hit_list = arcade.check_for_collision_with_list(bullet, self.MyGame.player_list)
 
-            # You exploded
-            if len(hit_list) > 0:
-                self.MyGame.player_sprite.remove_from_sprite_lists()
-                explosion = Explosion(self.MyGame.explosion_texture_list)
-                explosion.center_x = hit_list[0].center_x
-                explosion.center_y = hit_list[0].center_y
-                explosion.update()
-                self.MyGame.explosions_list.append(explosion)
-                arcade.play_sound(self.MyGame.hit_sound)
-                print("You went Boom")
+                # You exploded
+                if len(hit_list) > 0:
+                    self.MyGame.player_sprite.remove_from_sprite_lists()
+                    explosion = Explosion(self.MyGame.explosion_texture_list)
+                    explosion.center_x = hit_list[0].center_x
+                    explosion.center_y = hit_list[0].center_y
+                    explosion.update()
+                    self.MyGame.explosions_list.append(explosion)
+                    arcade.play_sound(self.MyGame.hit_sound)
+                    print("You went Boom")
 
             # If the bullet falls off the screen get rid of it
             if bullet.top < 0:
@@ -725,7 +725,7 @@ class MyGame(arcade.View):
 
         if arcade.check_for_collision_with_list(self.player_sprite, self.enemy1group.enemy_bullet_list):
             game_over_view = modules.gameover.GameOverView()
-            main.window.show_view(game_over_view)
+            self.main.window.show_view(game_over_view)
 
         if arcade.check_for_collision_with_list(self.player_sprite, self.enemy2group.enemy_bullet_list):
             game_over_view = modules.gameover.GameOverView()
@@ -760,6 +760,26 @@ class MyGame(arcade.View):
             self.enemy2group.startenemy2()
         if len(self.enemy3group.enemy_list) == 0:
             self.enemy3group.startenemy3()
+
+class GameOverView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.time_taken = 0
+
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
+
+    def on_draw(self):
+        arcade.start_render()
+        arcade.draw_text("Game Over", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, arcade.color.WHITE, font_size=50, anchor_x="center")
+        output_total = f"Total Score: {self.total_score}"
+        arcade.draw_text(output_total, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 45, arcade.color.WHITE, font_size=35, anchor_x="center")
+
+        arcade.draw_text("Click to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80, arcade.color.WHITE, font_size=24, anchor_x="center")
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        game_view = gameview.GameView()
+        self.window.show_view(game_view)
 
 
 def main():
